@@ -73,9 +73,9 @@ You can download Stackless python at: [http://www.stackless.com/]
 
 Atom contains some examples and tests. You can run the following tests:
 
-        $> cd/atom
-        $> python ./test/Hello_World/test_async.py
-        $> python ./test/registry/first.py
+        $> cd/pyactive
+        $> python ./examples/Hello_World/test_async.py
+        $> python ./examples/registry/first.py
 
 Choose the module using the function: 'start_controller'.  Nowadays, 
 you can put either the parameter 'tasklet' or 'atom_thread' to choose the module.
