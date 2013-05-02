@@ -71,16 +71,12 @@ You can download Python in: http://www.python.org/download/
 Once you have installed python, the next step is to install Stackless python.
 You can download Stackless python at: [http://www.stackless.com/]
 
-**Obtaining and using Pyactive**
-Atom can be found on our repository (subversion, read only access) : 
-[http://www.svnPedro.com]
-
 Atom contains some examples and tests. You can run the following tests:
 
-  $> cd/atom
-	$> python ./test/Hello_World/test_async.py
-	$> python ./test/registry/first.py
-}}}
+        $> cd/atom
+        $> python ./test/Hello_World/test_async.py
+        $> python ./test/registry/first.py
+
 Choose the module using the function: 'start_controller'.  Nowadays, 
 you can put either the parameter 'tasklet' or 'atom_thread' to choose the module.
 Note that you choose the tasklet module, you need the Stacklees Python. 
