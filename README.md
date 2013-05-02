@@ -55,7 +55,7 @@ using the standard threading library.  We validated the performance and expressi
 * **serve_forever**. It’s used like launch function but once the function ends, the program continues.
 
 
-## how to use PyActive? 
+## How to use PyActive? 
 
 
 In this section we explain all you need to use this middleware. It's easy!
