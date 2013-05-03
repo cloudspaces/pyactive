@@ -71,7 +71,8 @@ You can download Python in: http://www.python.org/download/
 Once you have installed python, the next step is to install Stackless python.
 You can download Stackless python at: [http://www.stackless.com/]
 
-Atom contains some examples and tests. You can run the following tests:
+
+PyActive contains some examples and tests. You can run the following tests:
 
         $> cd/pyactive
         $> python ./examples/Hello_World/test_async.py
