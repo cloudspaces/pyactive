@@ -1,0 +1,57 @@
+==============================
+		PyActive
+==============================
+
+Thread's version
+================
+
+You must first install Python
+
+ALternative 1: Use setuptools
+=============================
+
+
+python setup.py develop
+
+
+Uninstalling ATOM using setuptools
+==================================
+
+python setup.py develop -u
+
+
+ALternative 2:Set the PYTHONPATH
+=============================
+
+#pyactive location
+export PYTHONPATH='home/edgar/workspace/pyactive_project/
+
+
+
+Stackless version
+================
+
+You must first install Stackless for Python 2.7.
+
+
+ALternative 1: Use setuptools
+=============================
+
+
+python setup.py develop
+
+
+Uninstalling ATOM using setuptools
+==================================
+
+python setup.py develop -u
+
+
+Alternative  2: Set the PYTHONPATH
+==================================
+
+#atom location
+export PYTHONPATH='home/edgar/workspace/pyactive_project/
+
+
+
