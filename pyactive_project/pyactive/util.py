@@ -21,11 +21,13 @@ def ref_d(f):
     return wrap_ref_d
 
 class AtomRef(Ref):
-    def __init__(self, aref):
+    def __init__(self, aref, gref=None):
         self.ref = aref
+        self.group = gref
     
     def get_aref(self):
         return self.ref
+    
     
 def methodsWithDecorator(cls, decoratorName):
     """Scan code to find the methods that need some decorator"""
@@ -44,13 +46,13 @@ def methodsWithDecorator(cls, decoratorName):
                 
 
 
-def methodsWithSync(cls):
+def methodsWithSync(cls, decoratorName):
     """Special method to scan methods with sync decorator, because need timeOut also"""
     sourcelines = inspect.getsourcelines(cls)[0]
     dict = {}
     for i, line in enumerate(sourcelines):
         line = line.strip()
-        if line.split('(')[0].strip() == '#@sync':
+        if line.split('(')[0].strip() == '#@' +decoratorName:
             nextLine = sourcelines[i+1]
             if nextLine.strip().find('def') == 0:
                 timeout = line.split('(')[1].strip(')')

@@ -1,5 +1,6 @@
 from setuptools import setup
 
+
 setup(
     name='PyActive',
     version='1.0',

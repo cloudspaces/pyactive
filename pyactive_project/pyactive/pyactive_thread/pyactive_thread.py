@@ -3,14 +3,14 @@ Author: Pedro Garcia Lopez <pedro.garcia@urv.cat>
 """
 
 from pyactive.constants import TCP, MODE, SYNC, RESULT, FROM, TO, TYPE, CALL, PARAMS, TARGET, METHOD, SRC, RPC_ID, ERROR
-from pyactive.exception import AtomError, TimeoutError, MethodError, NotFoundDispatcher
+from pyactive.exception import PyactiveError, TimeoutError, MethodError, NotFoundDispatcher
 import copy
-from urlparse import urlparse
-from pyactive.util import Ref, ref_l, ref_d
 from tcp_server import Server
 from threading import Thread, Event, RLock,current_thread, Lock
 from Queue import Queue
 import pyactive.controller as controller
+from pyactive.abstract_actor import Abstract_actor
+from urlparse import urlparse
 
 pending = {} 
 threads = {}   
@@ -68,7 +68,7 @@ class AsyncResult:
     def send(self,msg):
         self.current_msg = msg
         result = msg[RESULT]
-        if isinstance(msg,AtomError):
+        if isinstance(msg,PyactiveError):
             self.fail(result)
         else:
             self.succeed(result)
@@ -114,14 +114,10 @@ class AsyncResult:
     result=property(__getResult)   
     
     
-class Pyactive(Ref):
+class Pyactive(Abstract_actor):
     
     def __init__(self):
-        self.aref = ''
-        self.server= True
-        self.group = None
-        self.stopped = True
-        self.running = False
+        Abstract_actor.__init__(self)
         self.__lock = None
         
     def __processQueue(self):
@@ -135,22 +131,19 @@ class Pyactive(Ref):
         self.obj = obj
         
     def run(self):
-        self.running = True
+        Abstract_actor.run(self)
         self.channel = Channel()
         self.thread = Thread(target=self.__processQueue)
-        self.stopped = False
         self.thread.start()
         threads[self.thread] = self.aref
         
     def stop(self):
         self.channel.send(StopIteration)
     
-    
     def send(self,msg):
         msg[TO] = self.aref
         msg[TYPE] = CALL
         msg[TARGET] = self.target
-        
         if msg[MODE] == SYNC:
             pending[msg[RPC_ID]] = 1
             self.channel = AsyncResult()
@@ -164,9 +157,6 @@ class Pyactive(Ref):
         for name in self.parallelList:
             setattr(self.obj, name, ParallelWraper(getattr(self.obj, name), self.aref, self.__lock))
 
-    def send2(self,target,msg):
-        target.send(msg)
-        
     def receive_result(self):
         '''recive result of synchronous calls'''
         result = self.channel.result
@@ -184,7 +174,7 @@ class Pyactive(Ref):
                     result = invoke(*params)
             else:
                 result = invoke(*params)
-        except AtomError,e:
+        except PyactiveError,e:
             result= e    
             msg[ERROR]=1  
         except TypeError,e2:
@@ -204,24 +194,10 @@ class Pyactive(Ref):
                 msg2[FROM] = self.aref
                 msg2[TO] = _from
                 self.send2(target,msg2)
-    
-    def ref_on(self):
-        '''this method put wrapper to process ref'''
-        self.ref = True
-        self.receive = ref_l(self.receive)
-        self.send2 = ref_d(self.send2)
-            
-    def get_aref(self):
-        return self.aref    
-    
-    def set_aref(self, aref):
-        self.aref = aref
-        aurl = urlparse(aref)
-        module, kclass, oid = aurl.path[1:].split('/')
-        self._id = oid 
-        
+                
     def get_proxy(self):
         return self.host.load_client(self.channel, self.aref, get_current())
+            
 
 class ParallelWraper():
     def __init__(self, send, aref, lock):
@@ -303,7 +279,7 @@ def get_current():
     current = current_thread()
     if threads.has_key(current):
         return threads[current] 
-            
+                
 def send_timeout(receiver,rpc_id):
     if pending.has_key(rpc_id):
         del pending[rpc_id]

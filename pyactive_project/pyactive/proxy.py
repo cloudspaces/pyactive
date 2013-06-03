@@ -1,10 +1,10 @@
 """
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
-from constants import METHOD, SYNC, ONEWAY, PARAMS, MODE, FROM, RPC_ID
+from constants import METHOD, SYNC, ONEWAY, PARAMS, MODE, FROM, RPC_ID, MULTI
 import controller 
 from util import Ref
-from exception import AtomError
+from exception import PyactiveError
 from copy import copy
 
 import uuid
@@ -18,9 +18,10 @@ def select_time(packageName):
 class Auto_Proxy(Ref):
     """This Proxy is used to auto-calls. 
     It allows one object can call itself how one direct object calls."""
-    def __init__(self, obj, aref):
+    def __init__(self, obj, aref, gref = None):
         self.obj = obj
         self.aref = aref
+        self.gref = gref
         
     def __getattr__(self, name):
         return _RemoteMethod2(getattr(self.obj, name), name)
@@ -41,9 +42,10 @@ class Proxy(Ref):
             if name in self.client.syncList.keys():
                 setattr(self, name, _RefWraper(self.sync_remote_call, name))
                 del self.client.syncList[name]
-            else:
-                setattr(self, name, _RefWraper(self.async_remote_call, name))
-                self.client.asyncList.remove(name)
+                
+            if name in self.client.msyncList.keys():
+                setattr(self, name, _RefWraper(self.multi_sync_remote_call, name))
+                del self.client.msyncList[name] 
                 
         for name in self.client.asyncList:
             setattr(self, name, _RemoteMethod(self.async_remote_call, name))
@@ -64,7 +66,7 @@ class Proxy(Ref):
         time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
         result = self.client.receive_result()
         
-        if isinstance(result, AtomError):
+        if isinstance(result, PyactiveError):
             raise result  
         else:
             return result
@@ -77,8 +79,12 @@ class Proxy(Ref):
         msg[FROM] = self._from
         self.client.send(msg)
     
+    
     def get_aref(self):
         return self.client.get_aref()
+    
+    def get_gref(self):
+        return self.client.get_gref()
     
     def get_id(self):
         return self.client._id

@@ -16,7 +16,7 @@ def start_controller(controllerType):
     global packageName
     packageName = controllerType
     global controller
-    controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Pyactive', 'launch', 'new_dispatcher', 'ParallelWrapper'], -1)
+    controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Pyactive', 'launch', 'new_dispatcher', 'ParallelWrapper', 'new_group'], -1)
     global timeController
     timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval'], -1)
     
@@ -75,7 +75,7 @@ class Host(object):
         
         #Insert aref to Pyactive object
         a.set_aref(aref)
-        a.host = self
+        a.hosthost = self
         obj.id = oid
         obj._atom = a
         refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
@@ -98,9 +98,10 @@ class Host(object):
         self.register(aref, a)
         
         obj.proxy = Auto_Proxy(obj, aref)
-        client = self.load_client(a.channel, aref, aref)
+        client = self.load_client(a.channel, aref, aref, a.group)
         return client
-    
+        
+        
     def register(self, aref, obj):
         aurl = urlparse(aref)
         #change next if for method is_local, when we have the Dispatcher
@@ -125,7 +126,7 @@ class Host(object):
     def is_local(self, location):
         return location == self.name  
     
-    def load_client(self, channel, aref, _from):
+    def load_client(self, channel, aref, _from, group=None):
     
         scheme, host, module, kclass, oid, = self.parse_aref(aref)
         if module != 'controller':
@@ -137,9 +138,13 @@ class Host(object):
         client.out = channel
         client.target = host
         client.set_aref(aref)
+        client.group = group
         client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
         client.refList = list(methodsWithDecorator(kclass_, 'ref'))
-        client.syncList = methodsWithSync(kclass_) 
+        client.syncList = methodsWithSync(kclass_, 'sync') 
+        client.msyncList = methodsWithSync(kclass_, 'msync')
+        client.masyncList = list(methodsWithDecorator(kclass_, 'masync'))
+ 
         client.host = self
         select_time(packageName)
         proxy = Proxy(client, _from)
@@ -253,7 +258,4 @@ def interval(time, f, *args, **kwargs):
     
 def later(time, f, *args, **kwargs):
     timeController.later(time, f, *args, **kwargs)
-    
-
-    
     

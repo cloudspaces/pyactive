@@ -3,12 +3,12 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 
 from pyactive.controller import init_host, serve_forever, start_controller, interval
-from pyactive.exception import TimeoutError, AtomError
+from pyactive.exception import TimeoutError, PyactiveError
 
 
 
 
-k = 14
+k = 10
 MAX = 2 ** k
 
 
@@ -53,7 +53,7 @@ def exit1(ref):
 def show(ref):
     ref.show_finger_node()
 
-class succ_err(AtomError):
+class succ_err(PyactiveError):
     def __str__(self):
         return 'The successor is down'
 
@@ -235,14 +235,14 @@ def save_log(ref):
 def start_node():            
     #Canviar per fer el lookup
     nodes_h = {}
-    num_nodes = 20
+    num_nodes = 3
     cont = 1
     retry = 0
     index=0
-    tcpconf = ('tcp', ('127.0.0.1', 1238))
-    host = init_host(tcpconf)
-#    log = host.spawn_id('log','chord_log','LogUML',[])
-#    host.set_tracer(log)
+#    tcpconf = ('tcp', ('127.0.0.1', 1238))
+    host = init_host()
+    log = host.spawn_id('log','chord_log','LogUML',[])
+    host.set_tracer(log)
 
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord', 'Node', [])
@@ -254,21 +254,21 @@ def start_node():
         try:
             if(nodes_h[index].join(nodes_h[0])):
                 print "True"
-            interval(15, update, nodes_h[index])
+            interval(1, update, nodes_h[index])
             index += 1
             retry = 0
         except TimeoutError:
             retry += 1
             if retry > 3:
                 break
-    interval(100, show, nodes_h[0])
-    interval(100, show, nodes_h[num_nodes/2])
-    interval(100, show, nodes_h[num_nodes - 1])
+    interval(30, show, nodes_h[0])
+    interval(30, show, nodes_h[num_nodes/2])
+    interval(30, show, nodes_h[num_nodes - 1])
 
-#    interval(15, save_log, log)
+    interval(15, save_log, log)
         
 def main():
-    start_controller('tasklet')
+    start_controller('pyactive_thread')
     serve_forever(start_node)
     
 if __name__ == "__main__":

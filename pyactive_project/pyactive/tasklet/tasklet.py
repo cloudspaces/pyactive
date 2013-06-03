@@ -6,31 +6,26 @@ from pyactive.constants import METHOD, MODE, SRC, TO, FROM, TARGET, TYPE, RESULT
 from urlparse import urlparse
 import stackless
 import copy
-from pyactive.exception import AtomError, TimeoutError, NotFoundDispatcher, MethodError
+from pyactive.exception import PyactiveError, TimeoutError, NotFoundDispatcher, MethodError
 from pyactive.util import Ref, ref_l, ref_d
 from collections import deque
 from taskletDelay import sleep
 from tcp_server import Server
-
+from pyactive.abstract_actor import Abstract_actor
 pending = {} 
 tasklets = {}
 
-class Pyactive(Ref):
+class Pyactive(Abstract_actor):
     
     def __init__(self):
+        Abstract_actor.__init__(self)
         self.channel = stackless.channel()
         self.activate = stackless.channel()
-        self.aref = ''
-        self.ref = False
-        self.group = None
         self.queue = deque([])
         self.channel.preference = -1
-        self.running = False
-        
-        
     
     def run(self):
-        self.running = True
+        Abstract_actor.run(self)
         self.in_task = stackless.tasklet(self.enqueue)()
         self.msg_task = stackless.tasklet(self.processMessage)()
         tasklets[self.msg_task] = self.aref
@@ -41,16 +36,6 @@ class Pyactive(Ref):
     #@async
     def stop(self):
         self.running = False
-      
-    def __eq__(self, other):
-        return self.get_aref() == other.get_aref()
-    
-    def set_aref(self, aref):
-        self.aref = aref
-        aurl = urlparse(aref)
-        module, kclass, oid = aurl.path[1:].split('/')
-        self._id = oid
-    
         
     def enqueue(self):
         while True:
@@ -87,10 +72,6 @@ class Pyactive(Ref):
         for name in self.parallelList:
             setattr(self.obj, name, ParallelWraper(getattr(self.obj, name), self.aref))
 
-    
-    def send2(self, target, msg):
-        target.send(msg)
-      
     def receive_result(self):
         '''recive result of synchronous calls'''
         msg = self.channel.receive()
@@ -104,8 +85,8 @@ class Pyactive(Ref):
         result = None
         try:
             result = invoke(*params)
-        except AtomError, e:
-            result = AtomError(e)
+        except PyactiveError, e:
+            result = PyactiveError(e)
             msg[ERROR] = 1
         except TypeError, e2:
             result = MethodError()
@@ -124,30 +105,13 @@ class Pyactive(Ref):
                 msg2[FROM] = self.aref
                 msg2[TO] = _from
                 self.send2(target, msg2)
-                
-    def get_proxy(self):
-            
-        return self.host.load_client(self.channel, self.aref, get_current())
     
-    def ref_on(self):
-        self.ref = True
-        self.receive = ref_l(self.receive)
-        self.send2 = ref_d(self.send2)
-        
     #@sync(2)           
     def ping(self):
         return True
     
-    def get_aref(self):
-        return self.aref   
-    
-    def get_id(self):
-        return self._id 
-    
-    def get_gref(self):
-        if self.group != None:
-            return self.group.aref    
-        
+    def get_proxy(self):
+        return self.host.load_client(self.channel, self.aref, get_current())    
         
 class ParallelWraper():
     def __init__(self, send, aref):
@@ -208,6 +172,7 @@ class TCPDispatcher(Pyactive):
         except Exception, e:
             print e, 'TCP ERROR2'
     
+    
 def new_TCPdispatcher(host, dir):
     tcp = TCPDispatcher(host, dir) 
     tcp.run()
@@ -225,6 +190,7 @@ def get_current():
     current = stackless.getcurrent()
     if tasklets.has_key(current):
         return tasklets[current]    
+
 
 def send_timeout(channel, rpc_id):
     if pending.has_key(rpc_id):

@@ -3,7 +3,7 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 
 from pyactive.controller import init_host, serve_forever, start_controller, interval
-from pyactive.exception import TimeoutError, AtomError
+from pyactive.exception import TimeoutError, PyactiveError
 
 
 k = 14 #Finger table length#
@@ -46,7 +46,7 @@ def show(ref):
     ref.show_finger_list()
 #    ref.get_fingers()
 
-class succ_err(AtomError):
+class succ_err(PyactiveError):
     def __str__(self):
         return 'The successor is down'
 
