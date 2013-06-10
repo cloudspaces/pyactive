@@ -108,6 +108,7 @@ In this section you can see a simple Hello World synchronous and asynchronous. I
         if __name__ == '__main__':
         	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
         	start_controller('tasklet')
+        	launch(test)
 			
 **Hello_World Asynchronous**
 
@@ -128,6 +129,7 @@ In this section you can see a simple Hello World synchronous and asynchronous. I
         if __name__ == '__main__':
         	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
         	start_controller('tasklet')
+        	launch(test)
 
 
 
