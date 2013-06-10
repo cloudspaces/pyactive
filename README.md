@@ -86,7 +86,7 @@ Note that you choose the tasklet module, you need the Stacklees Python.
 
 ## Hello_world example
 
-In this section you can see a simple Hello World synchronous and asynchronous. Into Pyactive_Project you can find more complex examples into Examples folder.
+In this section you can see a simple Hello World synchronous and asynchronous. In Pyactive_Project you can find more complex examples into Examples folder.
 
 **Hello_World Synchronous**
 
