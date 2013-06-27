@@ -2,7 +2,7 @@
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 
-from pyactive.controller import init_host, serve_forever, start_controller, interval
+from pyactive.controller import init_host, serve_forever, start_controller, interval,sleep
 from pyactive.exception import TimeoutError, PyactiveError
 
 
@@ -36,7 +36,7 @@ def betweenE(value, init, end):
         return between(value, init, end)
     
 def stablilize(ref):
-    ref.stablilize()
+    ref.stabilize()
 def fix_finger(ref):
     ref.fix_finger()
     
@@ -55,6 +55,12 @@ class succ_err(PyactiveError):
 #-------END_BETWEEN-------#
 
 class Node():
+    
+    _sync = {'init_node':'1','give_successor_list':'5', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2','join':'20', 'is_alive':'2'}
+    _async = ['set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
+    _ref = ['set_predecessor','give_successor_list', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 'set_successor', 'notify']
+    _parallel = ['stabilize', 'fix_finger']
+    
     def __init__(self):
         self.finger = {}
         self.start = {}
@@ -63,21 +69,19 @@ class Node():
         self.successorList = []
         self.retry = [0,0]
     
-    #@sync(2)
+    
     def init_node(self):
         for i in range(k):
             self.start[i] = (int(self.id) + (2 ** i)) % (2 ** k)
         return True
     
     # SUCCESSOR #
-    #@ref
-    #@sync(2)
+ 
     def successor(self):
         return self.successorList[0]
         
     # FIND SUCCESSOR #
-    #@ref
-    #@sync(6)
+ 
     def  find_successor(self, id):
         if betweenE(id, int(self.predecessor.get_id()), int(self.id)):
 #                print 'self.proxy', self.proxy
@@ -85,18 +89,16 @@ class Node():
         n = self.find_predecessor(id)
 #            print 'find_successor 2', n.successor(), n
         return n.successor()
-    #@async
+    
     def get_fingers(self):
         self.successorList[0].show_finger_succ(self.proxy)     
         
     # END FIND SUCCESSOR #
-    #@ref
-    #@sync(1)
+    
     def get_predecessor(self):
         return self.predecessor
     
-    #@ref
-    #@async
+  
     def set_predecessor(self, pred):
         self.predecessor = pred
     
@@ -109,8 +111,7 @@ class Node():
             n1 = n1.closest_preceding_finger(id)
         return n1
 
-    #@ref
-    #@sync(3)
+   
     def closest_preceding_finger(self, id):
         try:
             for i in range(k - 1, -1, -1):
@@ -121,8 +122,7 @@ class Node():
             raise succ_err()
     
     
-    #@ref
-    #@sync(80)
+
     def join(self, n1):
         """if join return false, the node not entry in ring. Retry it before"""
         if self.id == n1.get_id():
@@ -141,6 +141,7 @@ class Node():
             else:
                 self.init_successor_list()
                 self.run = True
+                print 'predecessor', self.predecessor
                 return True
             
     def init_finger_table(self, n1):
@@ -184,21 +185,18 @@ class Node():
         self.update_list_successor()
 #        
         
-    #@ref
-    #@sync(5)
+  
     def give_successor_list(self):
         return self.successorList[:]
     
-    #@sync(2)        
+       
     def is_alive(self):
         if self._atom.running:
             return True
         else:
             return False           
-               
-    #@parallel
-    #@async
-    def stablilize(self):
+ 
+    def stabilize(self):
         try:
             x = self.successorList[0].get_predecessor()
             self.retry[1] = 0
@@ -215,14 +213,11 @@ class Node():
             self.successorList[0].notify(self.proxy)
         
         
-    #@ref   
-    #@async
+
     def notify(self, n):
         if(self.predecessor.get_id() == self.id or between(int(n.get_id()), int(self.predecessor.get_id()), int(self.id))):
             self.predecessor = n
-            
-    #@parallel
-    #@async
+
     def fix_finger(self):
         #el cas 0 no es mira perque ja tenim la listSuccessor
         if(self.currentFinger <= 0 or self.currentFinger >= k):
@@ -234,7 +229,7 @@ class Node():
         finally:
             self.currentFinger += 1
 #            
-    #@async
+  
     def leave(self):
         print 'bye bye!'
         self.successorList[0].set_predecessor(self.predecessor)
@@ -242,22 +237,21 @@ class Node():
         self._atom.stop()
 
         
-    #@ref    
-    #@async    
+  
     def set_successor(self, succ):
         self.successorList[0] = succ
         self.finger[0] = succ
 
-            
-    #@async 
+
     def show_finger_list(self):
         print 'Successor List of node ' + self.id
         for i in range(k):
             print self.successorList[i].get_id()
     
-    #@async
+
     def show_finger_node(self):
         print 'Finger table of node ' + self.id
+        print self.id
         print 'Predecessor' + self.predecessor.get_id()
         print 'start:node'
         for i in range(k):
@@ -274,35 +268,41 @@ def leave(ref):
     
 def start_node():            
     nodes_h = {}
-    num_nodes = 20
+    num_nodes = 50
     cont = 1
     retry = 0
     j = 0
     tcpconf = ('tcp', ('127.0.0.1', 1432))
     host = init_host(tcpconf)
-    log = host.spawn_id('log','chord_log','LogUML',[])
-    host.set_tracer(log)
+#    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+#    host = init_host(momconf)
+#    log = host.spawn_id('log','chord_log','LogUML',[])
+#    host.set_tracer(log)
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord', 'Node', [])
         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
+        
     while j < num_nodes:
         try:
             if(nodes_h[j].join(nodes_h[0])):
                 print "True"
-            interval(30, stablilize, nodes_h[j])
-            interval(30, fix_finger, nodes_h[j])
-            j += 1
-            retry = 0
+            
+            interval(20, stablilize, nodes_h[j])
+            interval(20, fix_finger, nodes_h[j])
+            sleep(1)
+                
         except TimeoutError:
             retry += 1
             if retry > 3:
                 break
-    interval(100, show, nodes_h[0])
-    interval(100, show, nodes_h[num_nodes /2])
-    interval(100, show, nodes_h[num_nodes -1])
-    interval(15, save_log, log)
+        else:
+            j += 1
+    interval(200, show, nodes_h[0])
+    interval(200, show, nodes_h[num_nodes /2])
+    interval(200, show, nodes_h[num_nodes -1])
+#    interval(15, save_log, log)
         
 def main():
     start_controller('pyactive_thread')

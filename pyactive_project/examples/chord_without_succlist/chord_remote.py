@@ -57,6 +57,10 @@ class succ_err(PyactiveError):
 #-------END_BETWEEN-------#
 
 class Node():
+    _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2','join':'20', 'is_alive':'2'}
+    _async = ['set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
+    _ref = ['set_predecessor', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 'set_successor', 'notify']
+    _parallel = ['stabilize', 'fix_finger']
     def __init__(self):
         self.finger = {}
         self.start = {}
@@ -64,15 +68,14 @@ class Node():
         self.finger = {}
         self.currentFinger = 1
     
-    #@sync(1)
+
     def init_node(self):
         for i in range(k):
             self.start[i] = (int(self.id) + (2 ** i)) % (2 ** k)
         return True
     
     # SUCCESSOR #
-    #@ref
-    #@sync(40)
+
     def successor(self):
         try:
 #            print 'successor', self.finger[0]
@@ -81,8 +84,7 @@ class Node():
             print succ_err()
         
     # FIND SUCCESSOR #
-    #@ref
-    #@sync(60)
+
     def  find_successor(self, id):
         try:
             if betweenE(id, int(self.predecessor.get_id()), int(self.id)):
@@ -95,18 +97,16 @@ class Node():
             raise succ_err()
         except(TimeoutError):
             raise TimeoutError()
-    #@async
+
     def get_fingers(self):
         self.finger[0].show_finger_succ(self.proxy)     
         
     # END FIND SUCCESSOR #
-    #@ref
-    #@sync(3)
+
     def get_predecessor(self):
         return self.predecessor
     
-    #@ref
-    #@async
+
     def set_predecessor(self, pred):
         self.predecessor = pred
     
@@ -124,8 +124,7 @@ class Node():
         except(TimeoutError):
             raise TimeoutError()
     
-    #@ref
-    #@sync(30)
+
     def closest_preceding_finger(self, id):
         try:
             for i in range(k - 1, -1, -1):
@@ -136,8 +135,6 @@ class Node():
             raise succ_err()
     
     
-    #@ref
-    #@sync(80)
     def join(self, n1):
         """if join return false, the node not entry in ring. Retry it before"""
         if self.id == n1.get_id():
@@ -172,16 +169,14 @@ class Node():
             for i in range(k - 1):
                 self.finger[i + 1] = self.finger[0]
         
-    
-    #@sync(2)        
+      
     def is_alive(self):
         if (self.run == True):
             return True
         else:
             return False           
                
-    #@parallel
-    #@async
+   
     def stablilize(self):
         x = self.finger[0].get_predecessor()
         if(between(int(x.get_id()), int(self.id), int(self.finger[0].get_id()))):
@@ -189,14 +184,12 @@ class Node():
         self.finger[0].notify(self.proxy)
         
         
-    #@ref   
-    #@async
+    
     def notify(self, n):
         if(self.predecessor.get_id() == self.id or between(int(n.get_id()), int(self.predecessor.get_id()), int(self.id))):
             self.predecessor = n
             
-    #@parallel
-    #@async
+    
     def fix_finger(self):
         #el cas 0 no es mira perque ja tenim la listSuccessor
         if(self.currentFinger <= 0 or self.currentFinger >= k):
@@ -208,7 +201,7 @@ class Node():
         finally:
             self.currentFinger += 1
             
-    #@async
+   
     def leave(self):
         print 'bye'
         self.finger[0].set_predecessor(self.predecessor)
@@ -216,13 +209,11 @@ class Node():
         self._atom.stop()
 
         
-    #@ref    
-    #@async    
+      
     def set_successor(self, succ):
         self.finger[0] = succ
     
     
-    #@async
     def show_finger_node(self):
         print 'Finger table of node ' + self.id
         print 'Predecessor' + self.predecessor.get_id()
@@ -264,20 +255,22 @@ def save_log(ref):
 
 def start_node():            
     nodes_h = {}
-    num_nodes = 30
-    cont = 21
+    num_nodes = 10
+    cont = 201 
     retry = 0
     index = 0
-    tcpconf = ('tcp', ('127.0.0.1', 6375))
-    host = init_host(tcpconf)
+#    tcpconf = ('tcp', ('127.0.0.1', 6375))
+#    host = init_host(tcpconf)
+    momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+    host = init_host(momconf)
     
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord_remote', 'Node', [])
         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-        
-    remote_aref = 'atom://127.0.0.1:1238/chord/Node/1'
+    remote_aref = 'mom://s1/chord/Node/5'
+#    remote_aref = 'atom://127.0.0.1:1238/chord/Node/1'
     remote_node = host.lookup(remote_aref)
     while index < num_nodes:
         try:
@@ -290,12 +283,13 @@ def start_node():
             retry += 1
             if retry > 3:
                 break
+        
     interval(100, show, nodes_h[0])
     interval(100, show, nodes_h[num_nodes/2])
     interval(100, show, nodes_h[num_nodes - 1])
         
 def main():
-    start_controller('tasklet')
+    start_controller('pyactive_thread')
     serve_forever(start_node)
     
 if __name__ == "__main__":

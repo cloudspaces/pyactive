@@ -53,6 +53,12 @@ class succ_err(PyactiveError):
 #-------END_BETWEEN-------#
 
 class Node():
+    
+    _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2','join':'20', 'is_alive':'2'}
+    _async = ['set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
+    _ref = ['set_predecessor', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 'set_successor', 'notify']
+    _parallel = ['stabilize', 'fix_finger']
+    
     def __init__(self):
         self.finger = {}
         self.start = {}
@@ -61,21 +67,19 @@ class Node():
         self.successorList = []
         self.retry = [0,0]
     
-    #@sync(2)
+   
     def init_node(self):
         for i in range(k):
             self.start[i] = (int(self.id) + (2 ** i)) % (2 ** k)
         return True
     
     # SUCCESSOR #
-    #@ref
-    #@sync(2)
+    
     def successor(self):
         return self.successorList[0]
         
     # FIND SUCCESSOR #
-    #@ref
-    #@sync(6)
+   
     def  find_successor(self, id):
         if betweenE(id, int(self.predecessor.get_id()), int(self.id)):
             return self.proxy
@@ -86,13 +90,11 @@ class Node():
         self.successorList[0].show_finger_succ(self.proxy)     
         
     # END FIND SUCCESSOR #
-    #@ref
-    #@sync(2)
+
     def get_predecessor(self):
         return self.predecessor
     
-    #@ref
-    #@async
+
     def set_predecessor(self, pred):
         self.predecessor = pred
     
@@ -105,17 +107,13 @@ class Node():
             n1 = n1.closest_preceding_finger(id)
         return n1
 
-    #@ref
-    #@sync(3)
+
     def closest_preceding_finger(self, id):
         for i in range(k - 1, -1, -1):
             if between(int(self.finger[i].get_id()), int(self.id), id):
                 return self.finger[i]
         return self.proxy
     
-    
-    #@ref
-    #@sync(80)
     def join(self, n1):
         """if join return false, the node not entry in ring. Retry it before"""
         if self.id == n1.get_id():
@@ -130,6 +128,7 @@ class Node():
             self.init_successor_list()
             self.run = True
             return True
+        
     def init_finger_table(self, n1):
         self.predecessor = self.proxy
         self.finger[0] = n1.find_successor(self.start[0]) 
@@ -170,20 +169,15 @@ class Node():
         self.indexLSucc = 1
         self.update_list_successor()
         
-    #@ref
-    #@sync(5)
     def give_successor_list(self):
         return self.successorList[:]
-    
-    #@sync(2)        
+            
     def is_alive(self):
         if self._atom.running:
             return True
         else:
             return False           
                
-    #@parallel
-    #@async
     def stablilize(self):
         try:
             x = self.successorList[0].get_predecessor()
@@ -200,15 +194,10 @@ class Node():
             self.update_list_successor()
             self.successorList[0].notify(self.proxy)
         
-        
-    #@ref   
-    #@async
     def notify(self, n):
         if(self.predecessor.get_id() == self.id or between(int(n.get_id()), int(self.predecessor.get_id()), int(self.id))):
             self.predecessor = n
             
-    #@parallel
-    #@async
     def fix_finger(self):
         #el cas 0 no es mira perque ja tenim la listSuccessor
         if(self.currentFinger <= 0 or self.currentFinger >= k):
@@ -220,27 +209,22 @@ class Node():
         finally:
             self.currentFinger += 1
             
-    #@async
     def leave(self):
         print 'me largo!'
         self.successorList[0].set_predecessor(self.predecessor)
         self.predecessor.set_successor(self.successorList[0])
         self._atom.stop()
 
-        
-    #@ref    
-    #@async    
+   
     def set_successor(self, succ):
         self.successorList[0] = succ
         self.finger[0] = succ
             
-    #@async 
     def show_finger_list(self):
         print 'Successor List of node ' + self.id
         for i in range(k):
             print self.successorList[i].get_id()
     
-    #@async
     def show_finger_node(self):
         print 'Finger table of node ' + self.id
         print 'Predecessor' + self.predecessor.get_id()
@@ -252,20 +236,21 @@ class Node():
 
 def start_node():
     nodes_h = {}
-    num_nodes = 20
-    cont = 21 
+    num_nodes = 100
+    cont = 201
     retry = 0
     j=0
-    tcpconf = ('tcp', ('127.0.0.1', 6377))
-    host = init_host(tcpconf)
-    
+#    tcpconf = ('tcp', ('127.0.0.1', 6377))
+#    host = init_host(tcpconf)
+    momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+    host = init_host(momconf)
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord_remote', 'Node', [])
         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-        
-    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
+    remote_aref = 'mom://s1/chord/Node/1'   
+#    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
     remote_node = host.lookup(remote_aref)
 
     while j < num_nodes:

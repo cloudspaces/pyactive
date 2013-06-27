@@ -36,20 +36,18 @@ class Proxy(Ref):
     def __init__(self, client, _from):
         self._from = _from
         self.client = client
-        self.dict_methods = {}
         self.syncList = copy(self.client.syncList)
-        for name in self.client.refList:
-            if name in self.client.syncList.keys():
-                setattr(self, name, _RefWraper(self.sync_remote_call, name))
-                del self.client.syncList[name]
-                
-            if name in self.client.msyncList.keys():
-                setattr(self, name, _RefWraper(self.multi_sync_remote_call, name))
-                del self.client.msyncList[name] 
-                
+        refAsync = set(client.asyncList)&set(client.refList)
+        refSync = set(client.syncList)&set(client.refList)
+        
+        for name in refSync:
+            setattr(self, name, _RefWraper(self.sync_remote_call, name))
+            del self.client.syncList[name]        
+        for name in refAsync:
+            setattr(self, name, _RefWraper(self.async_remote_call, name))
+            self.client.asyncList.remove(name)        
         for name in self.client.asyncList:
             setattr(self, name, _RemoteMethod(self.async_remote_call, name))
-            
         for name in self.client.syncList.keys():
             setattr(self, name, _RemoteMethod(self.sync_remote_call, name))
             

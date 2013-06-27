@@ -1,17 +1,19 @@
 """
-Author: Pedro Garcia Lopez <pedro.garcia@urv.cat>
+Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 
-from pyactive.constants import TCP, MODE, SYNC, RESULT, FROM, TO, TYPE, CALL, PARAMS, TARGET, METHOD, SRC, RPC_ID, ERROR
+from pyactive.constants import *
 from pyactive.exception import PyactiveError, TimeoutError, MethodError, NotFoundDispatcher
-import copy
 from tcp_server import Server
+from mom_server import Server as Session
 from threading import Thread, Event, RLock,current_thread, Lock
 from Queue import Queue
-import pyactive.controller as controller
 from pyactive.abstract_actor import Abstract_actor
 from urlparse import urlparse
 
+import pyactive.controller as controller
+import cPickle
+import copy
 pending = {} 
 threads = {}   
 
@@ -114,7 +116,7 @@ class AsyncResult:
     result=property(__getResult)   
     
     
-class Pyactive(Abstract_actor):
+class Actor(Abstract_actor):
     
     def __init__(self):
         Abstract_actor.__init__(self)
@@ -213,18 +215,17 @@ class ParallelWraper():
         with self.__lock:
             func(*args, **kwargs)
         
-class TCPDispatcher(Pyactive):
+class TCPDispatcher(Actor):
     """ """
-    def __init__(self,host, addr = ('127.0.0.1',40406)):
-        Pyactive.__init__(self)
-        self.aref = 'asdhsah'
+    def __init__(self,host, addr):
+        Actor.__init__(self)
         ip, port = addr
         self.name = ip + ':' + str(port)
-        self.conn = Server(ip, port,self)
+        self.conn = Server(ip, port, self)
         self.addr = addr
         self.host = host
+        
         self.callback = {}
-
         
     def receive(self,msg):
         
@@ -232,11 +233,11 @@ class TCPDispatcher(Pyactive):
             self.callback[msg[RPC_ID]]= msg[SRC]
         
         msg[SRC] = self.addr
-        
         try:
             self.conn.send(msg)
         except Exception,e:
-            pass
+            print e,'TCP ERROR 2'
+             
     def _stop(self):
         self.channel.send(StopIteration)
         self.conn.close()
@@ -261,7 +262,65 @@ class TCPDispatcher(Pyactive):
                 aurl = urlparse(aref)
                 self.host.objects[aurl.path].channel.send(msg)
         except Exception,e:
+            print e,'TCP ERROR 1'
+class MOMDispatcher(Actor):
+                    #,ConnectionListener):
+
+    def __init__(self, host, conf):
+        Actor.__init__(self)
+        momip = conf[IP]
+        momport = conf[PORT]
+        self.namespace = conf[NAMESPACE]
+        self.session = Session(momip,momport)
+        self.host = host
+        self.name = conf[NAME]
+        self.session.subs(self,self.namespace,{'selector':"HOST='%s'"%self.name})
+        self.callback = {}
+
+        
+    def receive(self,msg):
+        if msg[MODE]==SYNC and msg[TYPE]==CALL:
+            self.callback[msg[RPC_ID]]= msg[SRC]
+            del msg[SRC]
+        parsed_msg = cPickle.dumps(msg)
+        try:
+            self.session.pub(parsed_msg,self.namespace,{'HOST':msg[TARGET],SRC:self.name})
+        except Exception,e:
+            print e,'MOM ERROR'
+            
+    def is_local(self,name):
+        return name == self.name
+    
+    #@async
+    def _stop(self):
+        self.session.close()
+        super(MOMDispatcher,self)._stop()
+        
+    
+    def on_message(self, headers, message):
+        try:
+            msg = cPickle.loads(message)
+            if msg[TYPE]==RESULT:
+                if pending.has_key(msg[RPC_ID]):
+                    del pending[msg[RPC_ID]]
+                    target = self.callback[msg[RPC_ID]]
+                    del self.callback[msg[RPC_ID]]
+                    target.send(msg)
+            else:
+                if msg[MODE]== SYNC:
+                    msg[SRC]= self.channel
+                    msg[TARGET]=headers[SRC]
+                    pending[msg[RPC_ID]] = 1
+                aref = msg[TO]
+                aurl = urlparse(aref)
+                self.host.objects[aurl.path].channel.send(msg)
+        except Exception,e:
             pass
+        
+def new_MOMdispatcher(host, dir):
+    mom = MOMDispatcher(host, dir)
+    mom.run()
+    return mom
             
 def new_TCPdispatcher(host, dir):
     tcp = TCPDispatcher(host, dir) 
@@ -272,6 +331,8 @@ def new_dispatcher(host, transport):
     dispatcher_type = transport[0]
     if dispatcher_type == TCP:
         return new_TCPdispatcher(host, transport[1])
+    if dispatcher_type == MOM:
+        return new_MOMdispatcher(host, transport[1])
     else:
         raise NotFoundDispatcher()
            
@@ -286,7 +347,6 @@ def send_timeout(receiver,rpc_id):
         receiver.fail(TimeoutError())
     
 def launch(func, params=[]):
-    #TODO Mirar que funcione bien el tema de matar todos los threads
     t1 = Thread(target=func, args=params)
     threads[t1] = 'atom://localhost/'+func.__module__+'/'+func.__name__
     t1.start()
