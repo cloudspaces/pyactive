@@ -4,7 +4,8 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 
 from urlparse import urlparse
 from proxy import Proxy, select_time, Auto_Proxy
-from util import Ref, AtomRef, methodsWithDecorator, methodsWithSync
+from util import Ref, AtomRef
+from copy import copy
 from exception import NotFoundDispatcher
 import sys
 
@@ -37,6 +38,10 @@ def tracer2(func,atom):
     return on_call
 
 class Host(object):
+    _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1' }
+    _async = ['shutdown']
+    _ref = ['set_tracer', 'spawn_id', 'lookup' ]
+    _prallel = []
     
     def __init__(self, transport=()):
         self.name = 'local'
@@ -68,17 +73,18 @@ class Host(object):
         aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
         
         #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
-        a = controller.Pyactive()
+        a = controller.Actor()
         
         #Registry object to Pyactive
         a.registry_object(obj)
         
         #Insert aref to Pyactive object
         a.set_aref(aref)
-        a.hosthost = self
+        a.host = self
         obj.id = oid
         obj._atom = a
-        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
+        refList = obj.__class__._ref
+#        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
         
         if self.TRACE:
             a.send2 = tracer2(a.send2, self.tracer)
@@ -88,8 +94,8 @@ class Host(object):
         
         if self.TRACE:
             a.receive = tracer(a.receive, self.tracer)
-               
-        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
+        a.parallelList = obj.__class__._parallel     
+#        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
         a.init_parallel()    
         #Finally run object because it's ready now
         a.run()
@@ -129,21 +135,22 @@ class Host(object):
     def load_client(self, channel, aref, _from, group=None):
     
         scheme, host, module, kclass, oid, = self.parse_aref(aref)
+        
         if module != 'controller':
             module_ = self.my_import(module)
             kclass_ = getattr(module_, kclass)
         else:
             kclass_ = self.__class__
-        client = controller.Pyactive()
+        client = controller.Actor()
         client.out = channel
         client.target = host
         client.set_aref(aref)
-        client.group = group
-        client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
-        client.refList = list(methodsWithDecorator(kclass_, 'ref'))
-        client.syncList = methodsWithSync(kclass_, 'sync') 
-        client.msyncList = methodsWithSync(kclass_, 'msync')
-        client.masyncList = list(methodsWithDecorator(kclass_, 'masync'))
+        client.asyncList = copy(kclass_._async)
+        client.refList = copy(kclass_._ref)
+        client.syncList = copy(kclass_._sync)
+#        client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
+#        client.refList = list(methodsWithDecorator(kclass_, 'ref'))
+#        client.syncList = methodsWithSync(kclass_, 'sync') 
  
         client.host = self
         select_time(packageName)
@@ -171,8 +178,7 @@ class Host(object):
         module, kclass, oid = aurl.path[1:].split('/')
         return (aurl.scheme, aurl.netloc, module, kclass, oid) 
     
-    #@ref
-    #@sync(1)
+
     def _lookup(self, aref, _from):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
@@ -230,7 +236,7 @@ class Host(object):
         
         
 def init_host(transport=()):
-    a = controller.Pyactive()
+    a = controller.Actor()
     h = Host(transport)
     a.set_aref(h.aref)
     a.host = h

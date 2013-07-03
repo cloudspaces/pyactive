@@ -15,7 +15,7 @@ from pyactive.abstract_actor import Abstract_actor
 pending = {} 
 tasklets = {}
 
-class Pyactive(Abstract_actor):
+class Actor(Abstract_actor):
     
     def __init__(self):
         Abstract_actor.__init__(self)
@@ -122,10 +122,10 @@ class ParallelWraper():
         t = stackless.tasklet(self.__send)(*args)
         tasklets[t] = self.__aref
 
-class TCPDispatcher(Pyactive):
+class TCPDispatcher(Actor):
    
     def __init__(self, host, addr):
-        Pyactive.__init__(self)  
+        Actor.__init__(self)  
         ip, port = addr
         self.name = ip + ':' + str(port)
         self.conn = Server(ip, port, self)

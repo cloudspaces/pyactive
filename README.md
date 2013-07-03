@@ -59,6 +59,7 @@ using the standard threading library.  We validated the performance and expressi
 
 
 In this section we explain all you need to use this middleware. It's easy!
+
 Into Pyactive_Project folder you can find how to install the middleware in INSTALL.txt.
 
 **Requirements**
@@ -85,40 +86,50 @@ Note that you choose the tasklet module, you need the Stacklees Python.
 
 ## Hello_world example
 
-In this section you can see a simple Hello World synchronous and asynchronous. Into Pyactive_Project you can find more complex examples into Examples folder.
+In this section you can see a simple Hello World synchronous and asynchronous. In Pyactive_Project you can find more complex examples into Examples folder.
 
 **Hello_World Synchronous**
 
         from pyactive.controller import init_host, launch,start_controller, sleep
-
         class Server():
-		#@sync(1)
-		def hello_world(self):
-			return 'hello world'
+        	#@sync(1)
+        	def hello_world(self):
+        		return 'hello world'
+        
         def test():
-		host = init_host()
-		n1 = host.spawn_id('1', 'test_sync', 'Server', [])
-		response = n1.hello_world()
-		print response
+        	host = init_host()
+        	
+        	# parameters 1 = 'id', 'test_sync' = module name, 'Server' = class name
+        	n1 = host.spawn_id('1', 'test_sync', 'Server', [])
+        	
+        	response = n1.hello_world()
+        	print response
+        
         if __name__ == '__main__':
-		#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
-		start_controller('tasklet')
+        	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
+        	start_controller('tasklet')
+        	launch(test)
 			
 **Hello_World Asynchronous**
 
         from pyactive.controller import init_host, launch,start_controller, sleep
-
         class Server():
-		#@async
-		def hello_world(self):
-			print 'hello world'
+        	#@async
+        	def hello_world(self):
+        		print 'hello world'
+        
         def test():
-		host = init_host()
-		n1 = host.spawn_id('1', 'test_sync', 'Server', [])
-		n1.hello_world()
+        	host = init_host()
+        	
+        	# parameters 1 = 'id', 'test_async' = module name, 'Server' = class name
+        	n1 = host.spawn_id('1', 'test_async', 'Server', [])
+        	
+        	n1.hello_world()
+        
         if __name__ == '__main__':
-		#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
-		start_controller('tasklet')
+        	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
+        	start_controller('tasklet')
+        	launch(test)
 
 
 

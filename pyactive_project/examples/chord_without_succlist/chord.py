@@ -2,7 +2,7 @@
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 
-from pyactive.controller import init_host, serve_forever, start_controller, interval
+from pyactive.controller import init_host, serve_forever, start_controller, interval, sleep
 from pyactive.exception import TimeoutError, PyactiveError
 
 
@@ -44,7 +44,7 @@ def betweenE(value, init, end):
 #-------END_BETWEEN-------#
     
 def update(ref):
-    ref.stablilize()
+    ref.stabilize()
     ref.fix_finger()
     
 def exit1(ref):
@@ -60,6 +60,11 @@ class succ_err(PyactiveError):
 
 
 class Node():
+    _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2','join':'20', 'is_alive':'2'}
+    _async = ['set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
+    _ref = ['set_predecessor', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 'set_successor', 'notify']
+    _parallel = ['stabilize', 'fix_finger']
+    
     def __init__(self):
         self.finger = {}
         self.start = {}
@@ -67,24 +72,21 @@ class Node():
         self.finger = {}
         self.currentFinger = 1
     
-    #@sync(1)
+    
     def init_node(self):
         for i in range(k):
             self.start[i] = (int(self.id) + (2 ** i)) % (2 ** k)
         return True
     
 
-    #@ref
-    #@sync(40)
     def successor(self):
         try:
             return self.finger[0]
         except(TimeoutError):
             print succ_err()
         
-    #@ref
-    #@sync(60)
-    def  find_successor(self, id):
+
+    def find_successor(self, id):
         try:
             if betweenE(id, int(self.predecessor.get_id()), int(self.id)):
                 return self.proxy
@@ -95,13 +97,11 @@ class Node():
         except(TimeoutError):
             raise TimeoutError()
         
-    #@ref
-    #@sync(3)
+ 
     def get_predecessor(self):
         return self.predecessor
     
-    #@ref
-    #@async
+
     def set_predecessor(self, pred):
         self.predecessor = pred
     
@@ -119,8 +119,7 @@ class Node():
         except(TimeoutError):
             raise TimeoutError()
     
-    #@ref
-    #@sync(30)
+ 
     def closest_preceding_finger(self, id):
         try:
             for i in range(k - 1, -1, -1):
@@ -131,8 +130,7 @@ class Node():
             raise succ_err()
     
     
-    #@ref
-    #@sync(80)
+  
     def join(self, n1):
         """if join return false, the node not entry in ring. Retry it before"""
         if self.id == n1.get_id():
@@ -163,16 +161,15 @@ class Node():
             for i in range(k - 1):
                 self.finger[i + 1] = self.finger[0]
     
-    #@sync(2)        
+    
     def is_alive(self):
         if (self.run == True):
             return True
         else:
             return False           
                
-    #@parallel
-    #@async
-    def stablilize(self):
+   
+    def stabilize(self):
         try:
             x = self.finger[0].get_predecessor()
         except:
@@ -183,16 +180,14 @@ class Node():
             self.finger[0].notify(self.proxy)
         
         
-    #@ref   
-    #@async
+   
     def notify(self, n):
         if(self.predecessor.get_id() == self.id or 
            between(int(n.get_id()), int(self.predecessor.get_id()), int(self.id))):
             
             self.predecessor = n
             
-    #@parallel
-    #@async
+
     def fix_finger(self):
         if(self.currentFinger <= 0 or self.currentFinger >= k):
             self.currentFinger = 1
@@ -202,16 +197,14 @@ class Node():
             None
         finally:
             self.currentFinger += 1
-            
-    #@async
+
     def leave(self):
         print 'bye bye!'
         self.finger[0].set_predecessor(self.predecessor)
         self.predecessor.set_successor(self.finger[0])
         self._atom.stop()
         
-    #@ref    
-    #@async    
+   
     def set_successor(self, succ):
         self.finger[0] = succ
         
@@ -221,11 +214,7 @@ class Node():
         print 'Predecessor' + self.predecessor.get_id()
         print 'start: node'
         for i in range(k):
-            try:
-#                print self.finger
-                print str(self.start[i]) + ' : ' + self.finger[i].get_id() 
-            except:
-                print "ERRORRRR!!!(doesn't have method get_id()",  self.finger[i]
+            print str(self.start[i]) + ' : ' + self.finger[i].get_id() 
         print '-----------'
         
        
@@ -235,14 +224,17 @@ def save_log(ref):
 def start_node():            
     #Canviar per fer el lookup
     nodes_h = {}
-    num_nodes = 3
+    num_nodes = 50
     cont = 1
     retry = 0
     index=0
-#    tcpconf = ('tcp', ('127.0.0.1', 1238))
-    host = init_host()
-    log = host.spawn_id('log','chord_log','LogUML',[])
-    host.set_tracer(log)
+    tcpconf = ('tcp', ('127.0.0.1', 1238))
+    host = init_host(tcpconf)
+#    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+#    host = init_host(momconf)
+
+#    log = host.spawn_id('log','chord_log','LogUML',[])
+#    host.set_tracer(log)
 
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord', 'Node', [])
@@ -254,18 +246,19 @@ def start_node():
         try:
             if(nodes_h[index].join(nodes_h[0])):
                 print "True"
-            interval(1, update, nodes_h[index])
+            interval(30, update, nodes_h[index])
             index += 1
             retry = 0
+            sleep(0.2)
         except TimeoutError:
             retry += 1
             if retry > 3:
-                break
-    interval(30, show, nodes_h[0])
-    interval(30, show, nodes_h[num_nodes/2])
-    interval(30, show, nodes_h[num_nodes - 1])
+                index += 1
+    interval(100, show, nodes_h[0])
+    interval(100, show, nodes_h[num_nodes/2])
+    interval(100, show, nodes_h[num_nodes - 1])
 
-    interval(15, save_log, log)
+#    interval(15, save_log, log)
         
 def main():
     start_controller('pyactive_thread')
