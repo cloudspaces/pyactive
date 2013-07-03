@@ -6,21 +6,21 @@ from pyactive.exception import TimeoutError, PyactiveError
 from chord import Node, show, update
 import copy
 
-
+#Herencia de la clase Mensaje del fichero chord.py para anadir otros atributos que necesitamos en el Scribe
 class ScribeMessage():
     
     def __init__(self,id, source, op, parent, text):
         self.id = id
         self.source = source
-        self.operation = op         
-        self.parent_node = parent   
-        self.text_message = text    
-        self.first_node = source    
+        self.operation = op         #Identificara si es un subscribe, unsubscribe o publish
+        self.parent_node = parent   #Nos dira nuestro padre (util en el unsubscribe)
+        self.text_message = text    #Llevara el mensaje a publicar (util en el publish)
+        self.first_node = source    #Nos dice el primer nodo de todos (util en el subscribe)
     
     def get_source_node(self):
         return self.source_node
 
-
+#Herencia de la clase Node del fichero chord.py para implementar los metodos forward y deliver para el Scribe
 class ScribeNode(Node):
     
     _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2'
@@ -117,6 +117,7 @@ class ScribeNode(Node):
             
             
 def start_node():            
+    #Canviar per fer el lookup
     nodes_h = {}
     num_nodes = 10
     cont = 1
