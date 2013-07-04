@@ -21,11 +21,11 @@ class ScribeMessage():
 class ScribeNode(Node):
     
     _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2'
-             ,'closest_preceding_fingerE':'3','join':'20', 'is_alive':'2','get_my_topics':'5', 
-             'get_routing_topic_nodes':'2','fail_stop_find_successor':'5'}
-    _async = ['set_predecessor','remove_son','subscribe_owner','forward','publish','unsubscribe','set_parent', 'set_successor', 'show_finger_node',
+             ,'closest_preceding_fingerE':'3','join':'20', 'is_alive':'2','subscribe':'1','get_my_topics':'5', 
+             'get_routing_topic_nodes':'2','lookup_subscribe':'5'}
+    _async = ['set_predecessor','remove_son','subscribe_owner','publish','unsubscribe','set_parent', 'set_successor', 'show_finger_node',
                'stabilize', 'notify', 'fix_finger','set_my_topics', 'del_my_topics','leave']
-    _ref = ['set_predecessor','remove_son','forward','set_parent','fail_stop_find_successor','publish','unsubscribe', 'get_predecessor', 
+    _ref = ['set_predecessor','remove_son','subscribe','set_parent','lookup_subscribe','publish','unsubscribe', 'get_predecessor', 
             'successor', 'find_successor','closest_preceding_finger','closest_preceding_fingerE','subscribe_owner', 'join', 
             'set_successor','notify']
     _parallel = ['stabilize', 'fix_finger']
@@ -54,79 +54,80 @@ class ScribeNode(Node):
     def del_my_topics(self, id):
         del self.my_topics[id]
     
-    def closest_preceding_fingerE(self, msg):
+    def closest_preceding_fingerE(self, id):
         for i in range(k-1,-1,-1):
-            if betweenE(int(self.finger[i].get_id()), int(self.id), msg.id):
+            if betweenE(int(self.finger[i].get_id()), int(self.id), id):
                 return self.finger[i]
         return self.proxy
     
-    def fail_stop_find_successor(self, msg):
-        if betweenE(msg.id, int(self.predecessor.get_id()), int(self.id)):
+    def lookup_subscribe(self, id, source):
+        first_node = source
+        if betweenE(id, int(self.predecessor.get_id()), int(self.id)):
             return self.proxy
         n = self.proxy
         
-        print msg.id, int(n.get_id()), int(n.successor().get_id())
-        while not betweenE(msg.id, int(n.get_id()), int(n.successor().get_id())):
-            n = n.closest_preceding_fingerE(msg)    
-            if int(n.get_id()) == msg.id:
-                n.subscribe_owner(msg)
+        while not betweenE(id, int(n.get_id()), int(n.successor().get_id())):
+            n = n.closest_preceding_fingerE(id)    
+            if int(n.get_id()) == id:
+                n.subscribe_owner(id, source, first_node)
                 return n           
             #Call to introduce some functionality in each forwarder ;) 
             if n != None:  
-                n.forward(msg)
+                source = n.subscribe(id, source)
         
-        n.successor().subscribe_owner(msg)
+        n.successor().subscribe_owner(id, source, first_node)
         return n.successor()
     
-    def forward(self, msg):   #Subscribe
+    def subscribe(self, topic, source):   #Subscribe
             
-        if ((msg.id in self.routing_topic_nodes.keys()) and (msg.source not in self.routing_topic_nodes.get(msg.id))):
-            self.routing_topic_nodes.get(msg.id).append(msg.source)
+        if ((topic in self.routing_topic_nodes.keys()) and (source not in self.routing_topic_nodes.get(topic))):
+            self.routing_topic_nodes.get(topic).append(source)
         else:
-            self.routing_topic_nodes[msg.id] = [msg.source]
-        print 'Forward: Source id: ' + str(msg.source.get_id()) + ' --> Node id: ' + str(self.id) + ' (Msg id: ' + str(msg.id) + ')'
+            self.routing_topic_nodes[topic] = [source]
+        print 'Forward: Source id: ' + str(source.get_id()) + ' --> Node id: ' + str(self.id) + ' (Hash Topic: ' + str(topic) + ')'
         
 
         #Change message information for next node.
-        msg.source.set_parent(self.proxy)
-        msg.source = self.proxy               
+        source.set_parent(self.proxy)
+        return self.proxy               
             
 
-    def subscribe_owner(self, msg): #Subscribe
+    def subscribe_owner(self, topic, source, first_node): #Subscribe
 
-        if ((msg.id in self.routing_topic_nodes.keys()) and (msg.source not in self.routing_topic_nodes.get(msg.id))):     #Si ya tengo ese id, hago append()
-            self.routing_topic_nodes.get(msg.id).append(msg.source)
+        if ((topic in self.routing_topic_nodes.keys()) and (source not in self.routing_topic_nodes.get(topic))):    
+            self.routing_topic_nodes.get(topic).append(source)
         else:
-            self.routing_topic_nodes[msg.id] = [msg.source]
+            self.routing_topic_nodes[topic] = [source]
             
-        msg.first_node.set_my_topics(msg.id, self.id)                        
-        print 'Deliver: Source id: ' + str(msg.source.get_id()) + ' --> Node id: ' + str(self.id) + ' (Msg id: ' + str(msg.id) + ')'
-        msg.source.set_parent(self.proxy)
+        first_node.set_my_topics(topic, self.id)                        
+        print 'Deliver: Source id: ' + str(source.get_id()) + ' --> Node id: ' + str(self.id) + ' (Hash Topic: ' + str(topic) + ')'
+        source.set_parent(self.proxy)
     
-    def publish(self, msg):            
+    def publish(self, topic, msg):            
             
-        if (msg.id in self.my_topics.keys()):
-            print 'Node ' + str(self.id) + ' receives the message ' + str(msg.text_message)
+        if (topic in self.my_topics.keys()):
+            print 'Node ' + str(self.id) + ' receives the message ' + str(msg)
             
-        if (msg.id in self.routing_topic_nodes.keys()):
-            for node in self.routing_topic_nodes.get(msg.id):
-                node.publish(msg)
-    def unsubscribe(self, msg):             #Unsubscribe
+        if (topic in self.routing_topic_nodes.keys()):
+            print self.routing_topic_nodes.get(topic)
+            for node in self.routing_topic_nodes.get(topic):
+                node.publish(topic, msg)
+                
+    def unsubscribe(self, topic, source, first_node):             #Unsubscribe
             
-        if ((msg.id not in self.my_topics.keys()) or (msg.first_node.get_id() == self.id)):
-            if ((msg.id in self.parent_node.get_routing_topic_nodes().keys()) and 
-                (msg.source in self.parent_node.get_routing_topic_nodes().get(msg.id))):
+        if ((topic not in self.my_topics.keys()) or (first_node.get_id() == self.id)):
+            if ((topic in self.parent_node.get_routing_topic_nodes().keys()) and 
+                (source in self.parent_node.get_routing_topic_nodes().get(topic))):
                 
                 #Clear my node from path of my father
-                self.parent_node.remove_son(msg.id, msg.source)
-                print 'Deliver: Source id: ' + str(msg.source.get_id()) + ' --> Node id: ' + str(self.parent_node.get_id()) + ' (Msg id: ' + str(msg.id) + ')'
+                self.parent_node.remove_son(topic, source)
+                print 'Deliver: Source id: ' + str(source.get_id()) + ' --> Node id: ' + str(self.parent_node.get_id()) + ' (Msg id: ' + str(topic) + ')'
         
-                if (len(self.parent_node.get_routing_topic_nodes().get(msg.id)) == 0):
-                    if (self.parent_node.get_id() != msg.first_node.get_my_topics(msg.id)[0]):
-                        msg.source = self.parent_node  
-                        self.parent_node.unsubscribe(msg)
+                if (len(self.parent_node.get_routing_topic_nodes().get(topic)) == 0):
+                    if (self.parent_node.get_id() != first_node.get_my_topics(topic)[0]):
+                        self.parent_node.unsubscribe(topic, self.parent_node, first_node)
                     else:
-                        msg.first_node.del_my_topics(msg.id)
+                        first_node.del_my_topics(topic)
                         
         print 'Unsubscribed successfully'
             
@@ -147,14 +148,14 @@ def menu(host, nodes_h, num_nodes):
             top = raw_input("Topic's name to subscribe: ")
             key = hash(top)%num_nodes 
             print key, src.get_id()
-            src.fail_stop_find_successor(ScribeMessage(key,src,-1,''))
+            src.lookup_subscribe(key, src)
                 
         elif (op==2):   #Unsubscribe a topic
             nod = int(raw_input("Choose a node: "))
             src = nodes_h[nod]
             top = raw_input("Topic's name to unsubscribe: ")
             key = hash(top)%num_nodes 
-            src.unsubscribe(ScribeMessage(key,src,-1,''))
+            src.unsubscribe(key, src, src)
             
         elif (op==3): #Publish a message
             nod = int(raw_input("Choose a node: "))
@@ -166,7 +167,8 @@ def menu(host, nodes_h, num_nodes):
             try:
                 topics = topics.get(key)
                 node_responsible = nodes_h[int(topics[0])-1]   
-                node_responsible.publish(ScribeMessage(key,src,-1, msg)) 
+                print node_responsible.get_id()
+                node_responsible.publish(key, msg) 
             except:
                 print "This node hasn't this topic"
         elif (op==4):
