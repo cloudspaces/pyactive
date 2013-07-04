@@ -6,6 +6,11 @@ import unittest
 from pyactive.controller import init_host, launch, start_controller
 
 class Server():
+    _sync = {'registry_obj': '2', 'get_name': '1'}
+    _async = ['hello_world']
+    _ref = []
+    _parallel = []
+    
     def __init__(self):
         self.name = None
     

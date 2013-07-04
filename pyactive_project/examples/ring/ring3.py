@@ -3,12 +3,11 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 import sys
 
-from pyactive.controller import init_host, launch,start_controller, sleep
+from pyactive.controller import init_host, launch, start_controller,sleep
 
 from time import time
-
-NUM_NODES = 5
-NUM_MSGS = 10
+NUM_NODES = 1000
+NUM_MSGS = 30000
 
 class Node():
  
@@ -21,9 +20,8 @@ class Node():
     #@async
     def set_next(self, n2):        
         self.next = n2
-        print n2
             
-    
+
     def get_cnt(self):
         return self.cnt
     
@@ -33,7 +31,7 @@ class Node():
     
     #@async
     def init_token(self):
-#        print 'send token',self,'->',self.next
+        #print 'send token',self,'->',self.next
         self.next.take_token()
         
     #@async
@@ -49,37 +47,33 @@ def testN():
     
     print 'TEST ',NUM_NODES,' nodes and', NUM_MSGS, "messages."
     
-    nf  = host.spawn_id('0','ring3','Node',['nf'])
+    nf  = host.spawn_id('init', 'ring3','Node',['nf'])
     
     ni = nf;
-    for i in range (1, NUM_NODES-2):    
+    for i in range (NUM_NODES-2):    
         ni = host.spawn_id(str(i), 'ring3','Node',[('n',i),ni]) 
     
-    n1 = host.spawn_id(str(NUM_NODES -1), 'ring3','Node',['n1',ni]) 
-    
+    n1 = host.spawn_id('end','ring3','Node',['n1',ni]) 
+        
     nf.set_next(n1)  
-      
+    print 'start time!!'
     init = time()
       
-    n1.init_token()
+    nf.init_token()
   
-    while(nf.is_finished()):
-        pass
+    while(not n1.is_finished()):
+        sleep(0.01)
         
     end = time()   
-    print 'N1', n1
+    
     print ((end - init)*1000),' ms.' 
     
  
-def main(argv):
-    
-    global NUM_NODES, NUM_MSGS
-      
-    NUM_NODES = int(argv[0])
-    NUM_MSGS = int(argv[1])
+def main():
     start_controller('pyactive_thread')
     launch(testN)
     print 'finish!'
  
 if __name__ == "__main__":
-    main(sys.argv[1:])   
+    main() 
+  

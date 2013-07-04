@@ -8,7 +8,7 @@ class Registry():
         self.names = {}
    
     #@ref
-    #@sync(1)
+    #@sync(50)
     def bind(self,name,atom):
         print 'binding ...'
         self.names[name] = atom
@@ -19,16 +19,16 @@ class Registry():
     def hello(self):
         print 'hello'
     
-    #@sync(1)
+    #@sync(50)
     def lookup(self,name):
         return self.names[name]
    
-    #@sync(1)
+    #@sync(50)
     def get_names(self):
         return self.names.keys()
    
     
-    #@sync(1)
+    #@sync(50)
     def get_values(self):
         return self.names.values()
 

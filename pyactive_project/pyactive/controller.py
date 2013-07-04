@@ -17,7 +17,7 @@ def start_controller(controllerType):
     global packageName
     packageName = controllerType
     global controller
-    controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Pyactive', 'launch', 'new_dispatcher', 'ParallelWrapper', 'new_group'], -1)
+    controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Actor', 'launch', 'new_dispatcher', 'ParallelWrapper', 'new_group'], -1)
     global timeController
     timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval'], -1)
     
@@ -65,13 +65,10 @@ class Host(object):
     #@sync(1)       
     def spawn_id(self, oid, module, kclass, params=[]):
         module_ = self.my_import(module)
-        
         #instance object save to obj variable
         obj = getattr(module_, kclass)(*params)
-                      
         #aref object
         aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
-        
         #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
         a = controller.Actor()
         
@@ -169,6 +166,7 @@ class Host(object):
         
     #@async
     def shutdown(self):
+        self._shutdown()
         if self.dispatcher != self:
             self.dispatcher._stop()
         self.atom.stop()
