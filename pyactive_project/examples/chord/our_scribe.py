@@ -6,17 +6,6 @@ from chord_protocol import Node, update, k, betweenE
 from pyactive.controller import init_host, serve_forever, start_controller, interval
 from pyactive.exception import TimeoutError
 
-class ScribeMessage():
-    
-    def __init__(self,id, source,  parent, text):
-        self.id = id
-        self.source = source
-        self.parent_node = parent   
-        self.text_message = text    
-        self.first_node = source    
-    
-    def get_source_node(self):
-        return self.source_node
 
 class ScribeNode(Node):
     
