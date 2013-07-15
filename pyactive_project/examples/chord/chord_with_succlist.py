@@ -4,17 +4,39 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 from chord_protocol import Node, k, MAX, between, start_node, update, show
 from pyactive.controller import serve_forever, start_controller, init_host, interval
 from pyactive.exception import TimeoutError
+import random
 
-class Node_chord(Node):
+I ={}
+
+def id(MAX):
+    # Returns a random number between 0 y 2^k (64)
+    return int(random.uniform(0, MAX))
+
+""" Uniform distribution of identifiers across the identifier space"""
+def uniform(N, I, max):
+    sample = []
+    for next in range(N):
+        tmp_id = id(max)
+        # We are looking for an ID which does not exist in the network, because could happen that
+        # the random function gives us an existing value.
+        while tmp_id in I:
+            tmp_id = id(max)  
+        # Once we are sure the value is unique, we store it in the identifier space dictionary
+        I[tmp_id] = tmp_id
+        # We add it to the list where we have the N identifiers of the uniformly found nodes
+        sample.append(tmp_id)  
+    return sample
+
+class SuccNode(Node):
     _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2'
-             ,'join':'20', 'is_alive':'2','give_successor_list':'5'}
+             ,'join':'20', 'is_alive':'2','get_finger':'2', 'give_successor_list':'5'}
     _async = ['leave','set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
-    _ref = ['set_predecessor', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 
+    _ref = ['set_predecessor','get_finger', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 
             'set_successor', 'notify']
     _parallel = ['stabilize', 'fix_finger']
     
     def __init__(self):
-        super(Node_chord, self).__init__()
+        super(SuccNode, self).__init__()
         self.successorList = []
         self.retry = [0,0]
         
@@ -95,7 +117,7 @@ class Node_chord(Node):
     
     def set_successor(self, succ):
         self.successorList[0] = succ
-        super(Node_chord, self).set_successor(succ)
+        super(SuccNode, self).set_successor(succ)
     
     def leave(self):
         print 'bye bye!'
@@ -105,19 +127,21 @@ class Node_chord(Node):
         
 def start_node():            
     nodes_h = {}
-    num_nodes = 20
-    cont = 1
+    num_nodes = 50
+#    cont = 1
     retry = 0
     j = 0
 #    tcpconf = ('tcp', ('127.0.0.1', 1432))
 #    host = init_host(tcpconf)
+    sample = uniform(num_nodes, I, MAX)
+    print sorted(sample)
     momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
     host = init_host(momconf)
 #    log = host.spawn_id('log','chord_log','LogUML',[])
 #    host.set_tracer(log)
     for i in range(num_nodes):
-        nodes_h[i] = host.spawn_id(str(cont), 'chord_with_succlist', 'Node_chord', [])
-        cont += 1
+        nodes_h[i] = host.spawn_id(str(sample[i]), 'chord_with_succlist', 'SuccNode', [])
+#        cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
         
@@ -148,11 +172,11 @@ def start_remote_node():
     momconf = ('mom',{'name':'c2','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
     host = init_host(momconf)
     for i in range(num_nodes):
-        nodes_h[i] = host.spawn_id(str(cont), 'chord_with_succlist', 'Node_chord', [])
+        nodes_h[i] = host.spawn_id(str(cont), 'chord_with_succlist', 'SuccNode', [])
         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-    remote_aref = 'mom://s1/chord_with_succlist/Node_chord/1'   
+    remote_aref = 'mom://s1/chord_with_succlist/SuccNode/1'   
 #    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
     remote_node = host.lookup(remote_aref)
 
@@ -173,7 +197,7 @@ def start_remote_node():
     interval(200, show, nodes_h[num_nodes - 1])
 def main():
     start_controller('pyactive_thread')
-    serve_forever(start_remote_node)
+    serve_forever(start_node)
     
 if __name__ == "__main__":
     main() 

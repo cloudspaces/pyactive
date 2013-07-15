@@ -2,20 +2,42 @@
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 
-from chord_protocol import Node, update, k, betweenE
+from chord_protocol import Node, update, k, betweenE, MAX
 from pyactive.controller import init_host, serve_forever, start_controller, interval
 from pyactive.exception import TimeoutError
 
+import random
+
+I ={}
+
+def id(MAX):
+    # Returns a random number between 0 y 2^k (64)
+    return int(random.uniform(0, MAX))
+
+""" Uniform distribution of identifiers across the identifier space"""
+def uniform(N, I, max):
+    sample = []
+    for next in range(N):
+        tmp_id = id(max)
+        # We are looking for an ID which does not exist in the network, because could happen that
+        # the random function gives us an existing value.
+        while tmp_id in I:
+            tmp_id = id(max)  
+        # Once we are sure the value is unique, we store it in the identifier space dictionary
+        I[tmp_id] = tmp_id
+        # We add it to the list where we have the N identifiers of the uniformly found nodes
+        sample.append(tmp_id)  
+    return sample
 
 class ScribeNode(Node):
     
     _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2'
-             ,'closest_preceding_fingerE':'3','join':'20', 'is_alive':'2','subscribe':'1','get_my_topics':'5', 
+             ,'closest_preceding_fingerE':'3','join':'20','get_finger':'2', 'is_alive':'2','subscribe':'1','get_my_topics':'5', 
              'get_routing_topic_nodes':'2','lookup_subscribe':'5'}
     _async = ['set_predecessor','remove_son','subscribe_owner','publish','unsubscribe','set_parent', 'set_successor', 'show_finger_node',
                'stabilize', 'notify', 'fix_finger','set_my_topics', 'del_my_topics','leave']
     _ref = ['set_predecessor','remove_son','subscribe','set_parent','lookup_subscribe','publish','unsubscribe', 'get_predecessor', 
-            'successor', 'find_successor','closest_preceding_finger','closest_preceding_fingerE','subscribe_owner', 'join', 
+            'successor', 'find_successor','get_finger','closest_preceding_finger','closest_preceding_fingerE','subscribe_owner', 'join', 
             'set_successor','notify']
     _parallel = ['stabilize', 'fix_finger']
     
@@ -52,6 +74,7 @@ class ScribeNode(Node):
     def lookup_subscribe(self, id, source):
         first_node = source
         if betweenE(id, int(self.predecessor.get_id()), int(self.id)):
+            self.subscribe_owner(id, source, first_node)
             return self.proxy
         n = self.proxy
         
@@ -75,7 +98,7 @@ class ScribeNode(Node):
             self.routing_topic_nodes[topic] = [source]
         print 'Forward: Source id: ' + str(source.get_id()) + ' --> Node id: ' + str(self.id) + ' (Hash Topic: ' + str(topic) + ')'
         
-
+        print source
         #Change message information for next node.
         source.set_parent(self.proxy)
         return self.proxy               
@@ -93,13 +116,13 @@ class ScribeNode(Node):
         source.set_parent(self.proxy)
     
     def publish(self, topic, msg):            
-            
+        print 'id',self.id,'keys',  self.my_topics.keys()
         if (topic in self.my_topics.keys()):
             print 'Node ' + str(self.id) + ' receives the message ' + str(msg)
-            
+        print 'id',self.id,'keys',  self.routing_topic_nodes.keys()    
         if (topic in self.routing_topic_nodes.keys()):
-            print self.routing_topic_nodes.get(topic)
             for node in self.routing_topic_nodes.get(topic):
+                print node
                 node.publish(topic, msg)
                 
     def unsubscribe(self, topic, source, first_node):             #Unsubscribe
@@ -119,7 +142,8 @@ class ScribeNode(Node):
                         first_node.del_my_topics(topic)
                         
         print 'Unsubscribed successfully'
-            
+        
+               
 def menu(host, nodes_h, num_nodes):
     fin = False
     while (fin == False):
@@ -133,24 +157,26 @@ def menu(host, nodes_h, num_nodes):
         op = int(raw_input("Choose an option: "))
         if (op==1):     #Subscribe to a topic
             nod = int(raw_input("Choose a node: "))
-            src = nodes_h[nod]
-            top = raw_input("Topic's name to subscribe: ")
-            key = hash(top)%num_nodes 
-            print key, src.get_id()
-            src.lookup_subscribe(key, src)
+            try:
+                src = nodes_h[nod]
+                top = raw_input("Topic's name to subscribe: ")
+                key = hash(top)%MAX
+                src.lookup_subscribe(key, src)
+            except:
+                print "Try again!"
                 
         elif (op==2):   #Unsubscribe a topic
             nod = int(raw_input("Choose a node: "))
             src = nodes_h[nod]
             top = raw_input("Topic's name to unsubscribe: ")
-            key = hash(top)%num_nodes 
+            key = hash(top)%MAX
             src.unsubscribe(key, src, src)
             
         elif (op==3): #Publish a message
             nod = int(raw_input("Choose a node: "))
             src = nodes_h[nod]
             top = raw_input("Topic's name to publish: ")
-            key = hash(top)%num_nodes  
+            key = hash(top)%MAX 
             msg = raw_input("Write the message: ")
             topics = src.get_my_topics()
             try:
@@ -179,17 +205,16 @@ def menu(host, nodes_h, num_nodes):
 def start_node():            
     nodes_h = {}
     num_nodes = 10
-    cont = 1
     retry = 0
     index=0
     tcpconf = ('tcp', ('127.0.0.1', 1238))
     host = init_host(tcpconf)
 #    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
 #    host = init_host(momconf)
-
+    sample = uniform(num_nodes, I, MAX)
+    print sample
     for i in range(num_nodes):
-        nodes_h[i] = host.spawn_id(str(cont), 'our_scribe', 'ScribeNode', [])
-        cont += 1
+        nodes_h[i] = host.spawn_id(str(sample[i]), 'our_scribe', 'ScribeNode', [])
     for i in range(num_nodes):    
         nodes_h[i].init_node()
     

@@ -67,7 +67,6 @@ class Node(object):
         self.finger = {}
         self.start = {}
         self.indexLSucc = 0
-        self.finger = {}
         self.currentFinger = 1
     
     #@sync(1)
@@ -99,6 +98,8 @@ class Node(object):
     def get_predecessor(self):
         return self.predecessor
     
+    def get_finger(self):
+        return self.finger.values()
 
     def set_predecessor(self, pred):
         self.predecessor = pred
@@ -146,15 +147,16 @@ class Node(object):
             
     def init_finger_table(self, n1):
         try:
-            self.predecessor = self.proxy
             self.finger[0] = n1.find_successor(self.start[0]) 
+            self.predecessor = self.finger[0].get_predecessor()
         except(succ_err):
             raise succ_err
         except(TimeoutError):
             raise TimeoutError()
         else:
+            neighbor_finger = self.finger[0].get_finger()
             for i in range(k - 1):
-                self.finger[i + 1] = self.finger[0]
+                self.finger[i + 1] = neighbor_finger[i]
            
     def is_alive(self):
         if (self.run == True):
@@ -179,14 +181,16 @@ class Node(object):
             self.predecessor = n
             
     def fix_finger(self):
-        if(self.currentFinger <= 0 or self.currentFinger >= k):
-            self.currentFinger = 1
+
         try:
-            self.finger[self.currentFinger] = self.find_successor(self.start[self.currentFinger])
+            for i in range(4):
+                if(self.currentFinger <= 0 or self.currentFinger >= k ):
+                    self.currentFinger = 1
+                self.finger[self.currentFinger] = self.find_successor(self.start[self.currentFinger])
+                self.currentFinger += 1
         except:
             None
-        finally:
-            self.currentFinger += 1
+      
 
     def leave(self):
         print 'bye bye!'
