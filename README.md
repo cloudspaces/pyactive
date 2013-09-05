@@ -92,7 +92,10 @@ In this section you can see a simple Hello World synchronous and asynchronous. I
 
         from pyactive.controller import init_host, launch,start_controller, sleep
         class Server():
-        	#@sync(1)
+        	_sync = {'hello_world':'1'}
+        	_async = []
+        	_parallel = []
+        	_ref = []
         	def hello_world(self):
         		return 'hello world'
         
@@ -114,7 +117,10 @@ In this section you can see a simple Hello World synchronous and asynchronous. I
 
         from pyactive.controller import init_host, launch,start_controller, sleep
         class Server():
-        	#@async
+        	_sync = {}
+        	_async = ['hello_world']
+        	_parallel = []
+        	_ref = []
         	def hello_world(self):
         		print 'hello world'
         
