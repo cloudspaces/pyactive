@@ -14,16 +14,13 @@ class Server():
     def __init__(self):
         self.name = None
     
-       
-    #@async
+
     def hello_world(self):
         self.name = 'async done'
-    
-    #@sync(1)     
+ 
     def get_name(self):
         return self.name
     
-    #@sync(2)
     def registry_obj(self, obj):
         self.obj = obj
         return True

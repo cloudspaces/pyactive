@@ -61,7 +61,8 @@ class Proxy(Ref):
         rpc_id = str(uuid.uuid1())
         msg[RPC_ID] = rpc_id
         self.client.send(msg)
-        time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
+#         time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
+        self.my_later(methodname, rpc_id)
         result = self.client.receive_result()
         
         if isinstance(result, PyactiveError):
@@ -77,7 +78,9 @@ class Proxy(Ref):
         msg[FROM] = self._from
         self.client.send(msg)
     
-    
+    def my_later(self, methodname, rpc_id):
+        time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
+
     def get_aref(self):
         return self.client.get_aref()
     
@@ -87,7 +90,8 @@ class Proxy(Ref):
     def get_id(self):
         return self.client._id
     
-
+    def __eq__(self,other):
+        return self.client._id == other.get_id()
 
         
 class _RemoteMethod2():        
@@ -113,6 +117,7 @@ class _RefWraper():
         
     def __call__(self, *args, **kwargs):
         new_args = controller.get_host()._dumps(list(args))
+#        print 'self.__send', self.__name
         result = self.__send(self.__name, new_args, kwargs)
         if result != None:
             return controller.get_host()._loads(result)

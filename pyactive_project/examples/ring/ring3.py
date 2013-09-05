@@ -6,18 +6,34 @@ import sys
 from pyactive.controller import init_host, launch, start_controller,sleep
 
 from time import time
-NUM_NODES = 1000
-NUM_MSGS = 30000
+<<<<<<< .mine
+NUM_NODES = 50000
+NUM_MSGS = 100
+=======
+NUM_NODES = 100
+NUM_MSGS = 10000
+>>>>>>> .r70
 
 class Node():
- 
+<<<<<<< .mine
+    _sync = {'is_finished':'1'}
+    _async = ['set_next', 'init_token', 'take_token']
+    _ref = ['set_next']
+    _parallel = []
+    
+=======
+    _sync = {'is_finished': '1', 'get_cnt': '1'}
+    _async = ['init_token', 'take_token', 'set_next']
+    _ref = ['set_next']
+    _parallel = []
+    
+>>>>>>> .r70
     def __init__(self,id=None,next=None):
         self.id = id
         self.next = next  
         self.cnt = 0
 
-    #@ref
-    #@async
+
     def set_next(self, n2):        
         self.next = n2
             
@@ -25,16 +41,15 @@ class Node():
     def get_cnt(self):
         return self.cnt
     
-    #@sync(1)
+
     def is_finished(self):
         return self.cnt >= NUM_MSGS
     
-    #@async
+
     def init_token(self):
         #print 'send token',self,'->',self.next
         self.next.take_token()
         
-    #@async
     def take_token(self):
         self.cnt += 1
         if (not self.is_finished()):
@@ -70,7 +85,7 @@ def testN():
     
  
 def main():
-    start_controller('pyactive_thread')
+    start_controller('tasklet')
     launch(testN)
     print 'finish!'
  

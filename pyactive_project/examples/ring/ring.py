@@ -7,7 +7,11 @@ from pyactive.controller import init_host, launch,start_controller, sleep
 
        
 class Node():
- 
+    _sync = {'get_cnt': '1', 'hello_sync': '1'}
+    _async = ['hello', 'start', 'start2']
+    _ref = []
+    _parallel = []
+    
     def __init__(self,id=None,n2=None):
         self.id = id
         self.now=False  

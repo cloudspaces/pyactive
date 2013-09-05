@@ -23,97 +23,8 @@ class Channel(Queue):
         Queue.__init__(self)
     def send(self,msg):
         self.put(msg)
-    def receive(self):
-        return self.get()
-    
-class AsyncResult:
-    """Represents an asynchronous operation that may not have completed yet."""
-    def __init__(self):
-        self.completed = False
-        self.failed = False
-        self.__wait = Event()
-        self.__callbacks = []
-        self.__errbacks = []
-        self.__retval = []
-        self.__error = None
-        self.__lock = RLock()
-        self.current_msg = None
-
-    def complete(self):
-        self.__lock.acquire()
-        self.completed = True
-        self.__wait.set()
-        self.__lock.release()
-        
-    def reset(self):
-        self.__lock.acquire()
-        self.completed = False
-        self.__wait.set()
-        self.__lock.release()
-
-    def succeed(self, retval):
-        self.__retval.append(retval)
-        self.complete()
-        for callback in self.__callbacks:
-            callback(retval)
-        self.clearCallbacks()
-
-    def fail(self, error):
-        self.__error = error
-        self.failed = True
-        self.complete()
-        for errback in self.__errbacks:
-            errback(error)
-        self.clearCallbacks()
-
-
-    def send(self,msg):
-        self.current_msg = msg
-        result = msg[RESULT]
-        if isinstance(msg,PyactiveError):
-            self.fail(result)
-        else:
-            self.succeed(result)
-
-
-    def clearCallbacks(self):
-        self.__callbacks = []
-        self.__errbacks = []
-
-    def addCallback(self, callback, errback=None):
-        self.__lock.acquire()
-        try:
-            if self.completed:
-                if not self.failed:
-                    callback(self.retval)
-            else:
-                self.__callbacks.append(callback)
-            if not errback == None:
-                self.addErrback(errback)
-        finally:
-            self.__lock.release()
-
-    def addErrback(self, errback):
-        self.__lock.acquire()
-        try:
-            if self.completed:
-                if self.failed:
-                    errback(self.error)
-            else:
-                self.__errbacks.append(errback)
-        finally:
-            self.__lock.release()
-
-    def __getResult(self):
-        self.__wait.wait()
-        if not self.failed:
-            if len(self.__retval)==1:
-                return self.__retval[0]
-            else:
-                return self.__retval
-        else:
-            raise self.__error
-    result=property(__getResult)   
+    def receive(self, timeout = None):
+        return self.get(timeout=timeout)
     
     
 class Actor(Abstract_actor):
@@ -121,6 +32,7 @@ class Actor(Abstract_actor):
     def __init__(self):
         Abstract_actor.__init__(self)
         self.__lock = None
+        self.channel = Channel()
         
     def __processQueue(self):
         while True:
@@ -134,7 +46,7 @@ class Actor(Abstract_actor):
         
     def run(self):
         Abstract_actor.run(self)
-        self.channel = Channel()
+        
         self.thread = Thread(target=self.__processQueue)
         self.thread.start()
         threads[self.thread] = self.aref
@@ -148,21 +60,21 @@ class Actor(Abstract_actor):
         msg[TARGET] = self.target
         if msg[MODE] == SYNC:
             pending[msg[RPC_ID]] = 1
-            self.channel = AsyncResult()
             msg[SRC] = self.channel
+        print msg
         self.out.send(msg)
     
     def init_parallel(self):
-        '''Create Lock to guarantee concurrency when it use parallel wrapper. 
+        '''Create Lock to guarantee concurrency when it uses parallel wrapper. 
         In addition it put parallel wrapper in the correct objects methods'''
         self.__lock = Lock()
         for name in self.parallelList:
             setattr(self.obj, name, ParallelWraper(getattr(self.obj, name), self.aref, self.__lock))
 
-    def receive_result(self):
-        '''recive result of synchronous calls'''
-        result = self.channel.result
-        return result
+    def receive_result(self, timeout = None):
+        '''receive result of synchronous calls'''
+        result = self.channel.receive(timeout)
+        return result[RESULT]
     
     
     def receive(self,msg):   
@@ -183,7 +95,7 @@ class Actor(Abstract_actor):
             result = MethodError()
             msg[ERROR]=1
     
-        if result!= None and msg[MODE] == SYNC:
+        if msg[MODE] == SYNC:
             msg2 = copy.copy(msg)
             target = msg2[SRC]
             msg2[TYPE]= RESULT
@@ -228,7 +140,6 @@ class TCPDispatcher(Actor):
         self.callback = {}
         
     def receive(self,msg):
-        
         if msg[MODE]==SYNC and msg[TYPE]==CALL:
             self.callback[msg[RPC_ID]]= msg[SRC]
         
@@ -341,10 +252,13 @@ def get_current():
     if threads.has_key(current):
         return threads[current] 
                 
-def send_timeout(receiver,rpc_id):
+def send_timeout(channel,rpc_id):
     if pending.has_key(rpc_id):
         del pending[rpc_id]
-        receiver.fail(TimeoutError())
+        msg = {}
+        msg[TYPE] = ERROR
+        msg[RESULT] = TimeoutError()
+        channel.send(msg)
     
 def launch(func, params=[]):
     t1 = Thread(target=func, args=params)

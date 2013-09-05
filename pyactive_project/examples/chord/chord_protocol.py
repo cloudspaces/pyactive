@@ -98,8 +98,6 @@ class Node(object):
     def get_predecessor(self):
         return self.predecessor
     
-    def get_finger(self):
-        return self.finger.values()
 
     def set_predecessor(self, pred):
         self.predecessor = pred
@@ -154,9 +152,8 @@ class Node(object):
         except(TimeoutError):
             raise TimeoutError()
         else:
-            neighbor_finger = self.finger[0].get_finger()
             for i in range(k - 1):
-                self.finger[i + 1] = neighbor_finger[i]
+                self.finger[i + 1] = self.finger[0]
            
     def is_alive(self):
         if (self.run == True):
@@ -183,14 +180,14 @@ class Node(object):
     def fix_finger(self):
 
         try:
-            for i in range(4):
-                if(self.currentFinger <= 0 or self.currentFinger >= k ):
-                    self.currentFinger = 1
-                self.finger[self.currentFinger] = self.find_successor(self.start[self.currentFinger])
-                self.currentFinger += 1
+            if(self.currentFinger <= 0 or self.currentFinger >= k ):
+                self.currentFinger = 1
+            self.finger[self.currentFinger] = self.find_successor(self.start[self.currentFinger])
+
         except:
             None
-      
+        else:
+            self.currentFinger += 1
 
     def leave(self):
         print 'bye bye!'
@@ -215,18 +212,18 @@ def save_log(ref):
 
 def start_node():            
     nodes_h = {}
-    num_nodes = 20
+    num_nodes = 5
     cont = 1
     retry = 0
     index=0
-#     tcpconf = ('tcp', ('127.0.0.1', 1234))
-#     host = init_host(tcpconf)
+#    tcpconf = ('tcp', ('127.0.0.1', 1234))
+#    host = init_host(tcpconf)
     momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
     host = init_host(momconf)
 
-#    log = host.spawn_id('log','chord_log','LogUML',[])
-#    host.set_tracer(log)
-
+    log = host.spawn_id('log','chord_log','LogUML',[])
+    host.set_tracer(log)
+#    print log
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord_protocol', 'Node', [])
         cont += 1
@@ -248,7 +245,8 @@ def start_node():
     interval(200, show, nodes_h[0])
     interval(200, show, nodes_h[num_nodes/2])
     interval(200, show, nodes_h[num_nodes - 1])
-
+    interval(15, save_log, log)
+    
 def start_remote_node():            
     nodes_h = {}
     num_nodes = 100
@@ -265,7 +263,7 @@ def start_remote_node():
         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-    remote_aref = 'mom://s1/chord_protocol/Node/3'
+    remote_aref = 'mom://s1/chord_protocol/Node/1'
 #    remote_aref = 'atom://127.0.0.1:1238/chord/Node/1'
     remote_node = host.lookup(remote_aref)
     while index < num_nodes:
@@ -288,7 +286,7 @@ def start_remote_node():
         
 def main():
     start_controller('pyactive_thread')
-    serve_forever(start_remote_node)
+    serve_forever(start_node)
     
 if __name__ == "__main__":
     main() 

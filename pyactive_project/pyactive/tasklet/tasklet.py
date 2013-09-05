@@ -92,7 +92,7 @@ class Actor(Abstract_actor):
             result = MethodError()
             msg[ERROR]=1
             
-        if result != None and msg[MODE] == SYNC:
+        if msg[MODE] == SYNC:
             msg2 = copy.copy(msg)
             target = msg2[SRC]
             msg2[TYPE] = RESULT

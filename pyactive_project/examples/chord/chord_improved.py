@@ -6,12 +6,15 @@ from pyactive.exception import TimeoutError
 
 class ImprovedNode(Node):
     _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2'
-             ,'join':'20', 'is_alive':'2'}
+             ,'join':'20', 'is_alive':'2', 'get_finger':'2'}
     _async = ['leave','set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
     _ref = ['set_predecessor', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 
-            'set_successor', 'notify']
+            'set_successor', 'notify','get_finger']
     _parallel = ['stabilize', 'fix_finger']
     
+    
+    def get_finger(self):
+        return self.finger.values()
 
     def fix_finger(self):
         try:

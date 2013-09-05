@@ -9,11 +9,14 @@ import pyactive.exception as e
 
 
 class Server():
-    #@sync(1)
+    _sync = {'hello_world': '2', 'throw_timeout': '1'}
+    _async = []
+    _ref = []
+    _parallel = []
+    
     def hello_world(self):
         return 'hello_world'
     
-    #@sync(1)
     def throw_timeout(self):
         sleep(3)
         return 'timeout test'
@@ -37,13 +40,9 @@ class Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(Test, cls).setUpClass()
-        conf = []
-        conf.append('127.0.0.1')
-        conf.append(61613)
-        conf.append('test')
-        tcpconf = ('mom',conf)
+        conf = ('tcp',('127.0.0.1',1234))
         start_controller('pyactive_thread')
-        cls.host = init_host(tcpconf)
+        cls.host = init_host(conf)
         
         
     def test_hello(self):

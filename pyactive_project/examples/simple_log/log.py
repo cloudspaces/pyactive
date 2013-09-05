@@ -5,7 +5,10 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 from pyactive.controller import init_host, launch, start_controller, interval, sleep
 
 class Server():
-    
+    _sync = {'add': '1'}
+    _async = ['substract']
+    _ref = []
+    _parallel = []
     
     #@sync(1) 
     def add(self,x,y):
@@ -17,7 +20,10 @@ class Server():
         
 
 class Log():
-    
+    _sync = {}
+    _async = ['notify']
+    _ref = []
+    _parallel = []
     #@async
     def notify(self,msg):
         print msg,' logged !!!'

@@ -26,6 +26,7 @@ class Abstract_actor(Ref):
         raise NotImplementedError()
 
     def send2(self,target,msg):
+        print 'msg2__return', msg
         target.send(msg)
         
     def receive_result(self):

@@ -21,7 +21,7 @@ def start_controller(controllerType):
     global timeController
     timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval'], -1)
     
-    
+
 
 def tracer(func,atom):
     """Tracer the call messages"""
@@ -40,7 +40,7 @@ def tracer2(func,atom):
 class Host(object):
     _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1' }
     _async = ['shutdown']
-    _ref = ['set_tracer', 'spawn_id', 'lookup' ]
+    _ref = ['spawn_id', 'lookup' ]
     _prallel = []
     
     def __init__(self, transport=()):
@@ -61,8 +61,7 @@ class Host(object):
         self.aref = 'atom://' + self.dispatcher.name + '/controller/Host/0'
         self.name = self.dispatcher.name
         
-    #@ref
-    #@sync(1)       
+     
     def spawn_id(self, oid, module, kclass, params=[]):
         module_ = self.my_import(module)
         #instance object save to obj variable
@@ -91,6 +90,7 @@ class Host(object):
         
         if self.TRACE:
             a.receive = tracer(a.receive, self.tracer)
+            
         a.parallelList = obj.__class__._parallel     
 #        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
         a.init_parallel()    
@@ -101,7 +101,7 @@ class Host(object):
         self.register(aref, a)
         
         obj.proxy = Auto_Proxy(obj, aref)
-        client = self.load_client(a.channel, aref, aref, a.group)
+        client = self.load_client(a.channel, aref, aref)
         return client
         
         
@@ -115,21 +115,20 @@ class Host(object):
                 self.objects[aurl.path] = obj
         else:
             raise Exception('registering remote host atoms not allowed')
-    #@ref
-    #@sync(1)
+
     def set_tracer(self,proxy):
         self.TRACE = True
         self.tracer = proxy
         return True    
     
-    #@async
+
     def hello(self):
         print 'I am Host'        
         
     def is_local(self, location):
         return location == self.name  
     
-    def load_client(self, channel, aref, _from, group=None):
+    def load_client(self, channel, aref, _from):
     
         scheme, host, module, kclass, oid, = self.parse_aref(aref)
         
@@ -189,8 +188,7 @@ class Host(object):
         else:
             client = self.load_client(self.dispatcher.channel, aref, _from)
             return client
-    #@ref
-    #@sync(1)
+
     def lookup(self, aref):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
@@ -248,6 +246,15 @@ def init_host(transport=()):
     host = h
     return a.get_proxy()
 
+def new_group(aref):
+    a = controller.Actor()
+    a.host = host
+    a.aref = aref+'/multi'
+    host.register(a.aref, a)
+    a.ref_on()
+    a.run()
+    return a
+
 def launch(func, params=[]):
     controller.launch(func, params)   
      
@@ -262,4 +269,6 @@ def interval(time, f, *args, **kwargs):
     
 def later(time, f, *args, **kwargs):
     timeController.later(time, f, *args, **kwargs)
+def send_timeout():
+    controller.send_timeout()
     

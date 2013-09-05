@@ -163,20 +163,21 @@ def start_node():
 
 def start_remote_node():
     nodes_h = {}
-    num_nodes = 100
-    cont = 21 + 50
+    num_nodes = 50
+#     cont = 21 + 50
     retry = 0
     j=0
+    sample = uniform(num_nodes, I, MAX)
 #    tcpconf = ('tcp', ('127.0.0.1', 6377))
 #    host = init_host(tcpconf)
     momconf = ('mom',{'name':'c2','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
     host = init_host(momconf)
     for i in range(num_nodes):
-        nodes_h[i] = host.spawn_id(str(cont), 'chord_with_succlist', 'SuccNode', [])
-        cont += 1
+        nodes_h[i] = host.spawn_id(str(sample[i]), 'chord_with_succlist', 'SuccNode', [])
+#         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-    remote_aref = 'mom://s1/chord_with_succlist/SuccNode/1'   
+    remote_aref = 'mom://s1/chord_with_succlist/SuccNode/7'   
 #    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
     remote_node = host.lookup(remote_aref)
 

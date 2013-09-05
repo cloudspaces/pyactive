@@ -10,6 +10,11 @@ def save_log(ref):
     ref.to_uml('chord_test2')
     
 class LogUML():
+    _sync = {}
+    _async = ['notify', 'to_uml']
+    _ref = []
+    _parallel = []
+    
     def __init__(self):
         self.events = []
         self.nameNodes = {}
@@ -20,11 +25,11 @@ class LogUML():
         self.list_nodes = []
         
  
-    #@async
+
     def notify(self,msg):  
         self.events.append(msg.copy())
         
-    #@async        
+   
     def to_uml(self, filename):
         uml = []
         uml_names = []

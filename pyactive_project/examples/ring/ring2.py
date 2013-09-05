@@ -8,30 +8,32 @@ from pyactive.controller import init_host, launch, start_controller, sleep
 
        
 class Node():
- 
+    _sync = {'set_next': '1', 'get_cnt': '1'}
+    _async = ['init_token', 'take_token']
+    _ref = ['set_next']
+    _parallel = []
+    
     def __init__(self,id=None,n2=None):
         self.id = id
         self.now=False  
         self.next = n2  
         self.cnt = 0
 
-#    @ref
-    #@sync(1)
+
     def set_next(self, n2):        
         self.next = n2
         return True
             
-    #@sync(1)
+ 
     def get_cnt(self):
         return self.cnt
     
-    #@async
+
     def init_token(self):
         print 'send token',self,'->',self.next
         self.next.take_token()
         print 'finish'
-        
-    #@async
+
     def take_token(self):
         self.cnt += 1
         if (self.cnt<2):

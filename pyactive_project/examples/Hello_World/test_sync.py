@@ -7,6 +7,10 @@ import unittest
 from pyactive.controller import init_host, launch,start_controller, sleep
 from pyactive.exception import TimeoutError
 class Server():
+    _sync = {'throw_timeout': '1', 'hello_world': '1'}
+    _async = []
+    _ref = []
+    _parallel = []
     #@sync(1)
     def hello_world(self):
         return 'hello_world'
@@ -15,6 +19,7 @@ class Server():
     def throw_timeout(self):
         sleep(3)
         return 'timeout test'
+
 
 
 def test_hello(test):
