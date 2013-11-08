@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/ChordEdgar/!svn/ver/78/trunk/alpha_version/pyactive_project/examples/my_paxos
+END
+paxos_example_names.sdx
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/ChordEdgar/!svn/ver/78/trunk/alpha_version/pyactive_project/examples/my_paxos/paxos_example_names.sdx
+END
+paxos_protocol.py
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/ChordEdgar/!svn/ver/79/trunk/alpha_version/pyactive_project/examples/my_paxos/paxos_protocol.py
+END
+main.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/ChordEdgar/!svn/ver/79/trunk/alpha_version/pyactive_project/examples/my_paxos/main.py
+END
+paxos_example.sdx
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/ChordEdgar/!svn/ver/78/trunk/alpha_version/pyactive_project/examples/my_paxos/paxos_example.sdx
+END
