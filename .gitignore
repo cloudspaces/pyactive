@@ -2,6 +2,7 @@
 
 # C extensions
 *.so
+
 *.svn
 # Packages
 *.egg
@@ -22,6 +23,7 @@ __pycache__
 
 # Installer logs
 pip-log.txt
+*.sdx
 
 # Unit test / coverage reports
 .coverage
