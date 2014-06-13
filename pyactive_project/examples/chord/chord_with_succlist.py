@@ -2,19 +2,20 @@
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
 from chord_protocol import Node, k, MAX, between, start_node, update, show
-from pyactive.controller import serve_forever, start_controller, init_host, interval
+from chord_log import save_log
+from pyactive.controller import serve_forever, start_controller, init_host, interval, sleep
 from pyactive.exception import TimeoutError
-import random
+import random, sys
 
 I ={}
-
+global sample
 def id(MAX):
     # Returns a random number between 0 y 2^k (64)
-    return int(random.uniform(0, MAX))
+    return int(random.uniform(1, MAX))
 
 """ Uniform distribution of identifiers across the identifier space"""
 def uniform(N, I, max):
-    sample = []
+    sample= []
     for next in range(N):
         tmp_id = id(max)
         # We are looking for an ID which does not exist in the network, because could happen that
@@ -31,10 +32,10 @@ class SuccNode(Node):
     _sync = {'init_node':'1', 'successor':'2','find_successor':'5', 'get_predecessor':'2','closest_preceding_finger':'2'
              ,'join':'20', 'is_alive':'2','get_finger':'2', 'give_successor_list':'5'}
     _async = ['leave','set_predecessor', 'set_successor', 'show_finger_node', 'stabilize', 'notify', 'fix_finger']
-    _ref = ['set_predecessor','get_finger', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join', 
+    _ref = ['set_predecessor','get_finger', 'get_predecessor', 'successor', 'find_successor', 'closest_preceding_finger', 'join',
             'set_successor', 'notify']
     _parallel = ['stabilize', 'fix_finger']
-    
+
     def __init__(self):
         super(SuccNode, self).__init__()
         self.successorList = []
@@ -127,28 +128,31 @@ class SuccNode(Node):
         
 def start_node():            
     nodes_h = {}
-    num_nodes = 50
-#    cont = 1
+    num_nodes = 3
+    cont = 1
     retry = 0
-    j = 0
-#    tcpconf = ('tcp', ('127.0.0.1', 1432))
-#    host = init_host(tcpconf)
-    sample = uniform(num_nodes, I, MAX)
+    j = 1
+    tcpconf = ('tcp', ('127.0.0.1', 1432))
+    host = init_host(tcpconf)
+    sample = uniform(3, I, MAX)
     print sorted(sample)
-    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
-    host = init_host(momconf)
-#    log = host.spawn_id('log','chord_log','LogUML',[])
-#    host.set_tracer(log)
+#     momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+#     host = init_host(momconf)
+#     log = host.spawn_id('log','chord_log','LogUML',[])
+#     host.set_tracer(log)
     for i in range(num_nodes):
-        nodes_h[i] = host.spawn_id(str(sample[i]), 'chord_with_succlist', 'SuccNode', [])
-#        cont += 1
+        nodes_h[i] = host.spawn_id(str(cont), 'chord_with_succlist', 'SuccNode', [])
+        cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-        
+    if(nodes_h[0].join(nodes_h[0])):
+         print 0,"- True"
+    interval(5, update, nodes_h[0])
+
     while j < num_nodes:
         try:
-            if(nodes_h[j].join(nodes_h[0])):
-                print "True"
+            if(nodes_h[j].join(nodes_h[j-1])):
+                print j,"- True"
             
             interval(5, update, nodes_h[j])
         except TimeoutError:
@@ -157,48 +161,54 @@ def start_node():
                 break
         else:
             j += 1
-    interval(200, show, nodes_h[0])
-    interval(200, show, nodes_h[num_nodes /2])
-    interval(200, show, nodes_h[num_nodes -1])
+
+    # interval(5, save_log, log)
+    interval(100, show, nodes_h[0])
+    interval(100, show, nodes_h[num_nodes /2])
+    interval(100, show, nodes_h[num_nodes -1])
 
 def start_remote_node():
     nodes_h = {}
     num_nodes = 50
-#     cont = 21 + 50
+    cont =  4
+    port = int(sys.argv[3])
     retry = 0
     j=0
-    sample = uniform(num_nodes, I, MAX)
-#    tcpconf = ('tcp', ('127.0.0.1', 6377))
-#    host = init_host(tcpconf)
-    momconf = ('mom',{'name':'c2','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
-    host = init_host(momconf)
+    sample = uniform(50, I, MAX)
+    print sorted(sample)
+    tcpconf = ('tcp', ('127.0.0.1', int(port)))
+    host = init_host(tcpconf)
+#     momconf = ('mom',{'name':'c2','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+#     host = init_host(momconf)
     for i in range(num_nodes):
-        nodes_h[i] = host.spawn_id(str(sample[i]), 'chord_with_succlist', 'SuccNode', [])
-#         cont += 1
+        nodes_h[i] = host.spawn_id(str(cont + 500), 'chord_with_succlist', 'SuccNode', [])
+        cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-    remote_aref = 'mom://s1/chord_with_succlist/SuccNode/7'   
-#    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
+    #remote_aref = 'mom://127.0.0.1:1432/chord_with_succlist/SuccNode/'+str(sample[0])
+    remote_aref = 'atom://127.0.0.1:1432/chord_with_succlist/SuccNode/1'
     remote_node = host.lookup(remote_aref)
 
     while j < num_nodes:
         try:
             if(nodes_h[j].join(remote_node)):
-                print "True"
-            interval(5, update, nodes_h[j])
+                print j,"- True"
+            interval(2, update, nodes_h[j])
             j += 1
             retry = 0
         except(TimeoutError):
             retry += 1
             if retry > 3:
                 break
-    
     interval(200, show, nodes_h[0])
     interval(200, show, nodes_h[num_nodes/2])
     interval(200, show, nodes_h[num_nodes - 1])
 def main():
-    start_controller('pyactive_thread')
-    serve_forever(start_node)
-    
+    sys.argv[1]
+    start_controller(str(sys.argv[1]))
+    if sys.argv[2] == 'local':
+        serve_forever(start_node)
+    else:
+        serve_forever(start_remote_node)
 if __name__ == "__main__":
     main() 

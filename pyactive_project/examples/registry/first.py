@@ -8,7 +8,6 @@ class Registry():
     _async = ['hello']
     _ref = ['bind','get_values']
     _parallel = []
-    
     def __init__(self):
         self.names = {}
    
@@ -42,6 +41,7 @@ def test3():
     host = init_host(tcpconf)
     
     registry = host.spawn_id('1','first','Registry',[])
+    print 'hola'
     registry.bind('first', host)
    
 

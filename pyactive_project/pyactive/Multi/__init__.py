@@ -11,15 +11,20 @@ import exceptions
 
 class AbstractMulti(object):
     def __init__(self, list_actors):
-        self.list_actors = []
-        self.list_actors = list_actors
+        self.dict_actors = {}
         
+        self.attach_list(list_actors)
+
     def attach(self, actor):
-        self.list_actors.extend(actor)
+        dumps_actor = get_host()._dumps(actor)
+        actor = get_host()._loads(dumps_actor)
+        self.dict_actors[actor.get_aref()] = actor
     
     def detach(self, actor):
-        self.list_actors.remove(actor)
-        
+        del self.dict_actors[actor.get_aref()]        
+    def attach_list(self, actors):
+        for actor in actors:
+            self.attach(actor)
 class AMulti(AbstractMulti):
     def __init__(self, list_actors):
         AbstractMulti.__init__(self, list_actors)
@@ -28,7 +33,7 @@ class AMulti(AbstractMulti):
     
         
     def dispatch(self, methodname, vargs, kwargs):
-        for a in self.list_actors:
+        for a in self.dict_actors.values():
             getattr(a, methodname)(*vargs)
 #             a.async_remote_call(methodname, vargs, kwargs)
     
@@ -38,7 +43,7 @@ class SMulti(AbstractMulti):
         AbstractMulti.__init__(self, list_actors)
         self.own_actor = atom
         self.actor = new_group(self.own_actor.aref)
-        self.ref_list = self.list_actors[0].refSync
+        self.ref_list = self.dict_actors.values()[0].refSync
         for name in self.ref_list:
             setattr(self, name, _RefWraper(self.dispatch, name))
                         
@@ -46,8 +51,7 @@ class SMulti(AbstractMulti):
         return _RemoteMethod2(self.dispatch, name)
     
     def dispatch(self, methodname, vargs, kwargs):
-        
-        result = []
+        final_result = {}
         rpc_id_list = []
         msg = {}
         msg[METHOD] = methodname
@@ -57,8 +61,11 @@ class SMulti(AbstractMulti):
         msg[TYPE] = CALL
         rpc_id = str(uuid.uuid1())
         msg[SRC] = self.actor.channel
-        later(int(self.list_actors[0].syncList.get(methodname)), send_timeout_multi, self.actor.channel, rpc_id_list)
-        for a in self.list_actors:
+        if methodname == 'keep_alive':
+            later(20, send_timeout_multi, self.actor.channel, rpc_id_list)
+        else:
+            later(int(self.dict_actors.values()[0].syncList.get(methodname)), send_timeout_multi, self.actor.channel, rpc_id_list)
+        for a in self.dict_actors.values():
             msg[TO] = a.client.aref
             rpc_id = str(uuid.uuid1())
             msg[RPC_ID] = rpc_id
@@ -66,16 +73,15 @@ class SMulti(AbstractMulti):
             rpc_id_list.append(rpc_id) 
             msg2 = copy.copy(msg)
             a.client.out.send(msg2)
-        for a in self.list_actors:
-            parcial_result =  self.actor.receive_result()
-            if isinstance(parcial_result, PyactiveError):
-                if not result:
+        for a in self.dict_actors.values():
+            from_result, parcial_result = self.actor.receive_result()
+            if from_result == 'timeout_controller':
+                if not final_result:
                     raise Exception, 'The timeout has expired'
                 else:
-                    return result
-            
-            result.append(parcial_result)
-        return result
+                    return final_result
+            final_result[from_result] = parcial_result#.append(parcial_result)
+        return final_result
 
 class _RefWraper():
     def __init__(self, send, name):
@@ -85,9 +91,11 @@ class _RefWraper():
         new_args = get_host()._dumps(list(args))
         result = self.__send(self.__name, new_args, kwargs)
         if result != None:
-            return get_host()._loads(result)
+            return {k: get_host()._loads(v) for k, v in result.items()}
+#             return get_host()._loads(result.values)
         else:
             return result
+        
 class _RemoteMethod2():
     def __init__(self, send, name):
         self.__send = send

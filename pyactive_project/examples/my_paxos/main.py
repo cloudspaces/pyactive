@@ -14,6 +14,7 @@ from pyactive.util import Ref
 N_PROPOSERS = 4
 N_ACCEPTORS = 5
 N_LEARNERS = 5
+
 class LogUML():
     _sync = {}
     _async = ['notify', 'to_uml']
@@ -131,20 +132,19 @@ def test():
     lP = []
     lA = []
     lL = []
-    start_controller('pyactive_thread')
     host = init_host()
 #     log = host.spawn_id('log', 'main', 'LogUML', [])
 #     host.set_tracer(log)
-#     interval(1, save_log, log)
+#      interval(1, save_log, log)
     for i in range(0, N_LEARNERS):
-        l = host.spawn_id(str(i), 'paxos_protocol', 'Learner',[N_ACCEPTORS])
+        l = host.spawn_id(str(i), 'paxos_protocol_sync', 'Learner',[N_ACCEPTORS])
         lL.append(l)
     for i in range(0, N_ACCEPTORS):
-        a = host.spawn_id(str(i+N_LEARNERS), 'paxos_protocol', 'Acceptor', [N_ACCEPTORS])
+        a = host.spawn_id(str(i+N_LEARNERS), 'paxos_protocol_sync', 'Acceptor', [N_ACCEPTORS])
         a.set_multi(lL)
         lA.append(a)    
     for i in range(0,N_PROPOSERS):
-        p = host.spawn_id(str(i+N_LEARNERS+N_ACCEPTORS+5), 'paxos_protocol', 'Proposer', [N_ACCEPTORS])
+        p = host.spawn_id(str(i+N_LEARNERS+N_ACCEPTORS+5), 'paxos_protocol_sync', 'Proposer', [N_ACCEPTORS])
         
         num = int(random.random() * 100)
         print i, num

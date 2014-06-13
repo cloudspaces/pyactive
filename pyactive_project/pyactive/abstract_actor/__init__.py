@@ -26,7 +26,6 @@ class Abstract_actor(Ref):
         raise NotImplementedError()
 
     def send2(self,target,msg):
-        print 'msg2__return', msg
         target.send(msg)
         
     def receive_result(self):
@@ -34,7 +33,12 @@ class Abstract_actor(Ref):
         result = self.channel.result
         return result
     
+    def keep_alive(self):
+        return True
     
+    def failure_detect(self, actor):
+        self.obj.failure_detect(actor.get_id())
+        
     def receive(self,msg):   
         raise NotImplementedError()
     

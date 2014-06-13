@@ -4,7 +4,10 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 from pyactive.controller import init_host, launch, start_controller, sleep
     
 class Node():
- 
+    _sync = {'send_msg':'50', 'return_msg':'50'}
+    _async = ['print_some', 'start', 'start_n3']
+    _parallel = ['start']
+    _ref = []
     def __init__(self,id=None,n2=None):
         self.id = id
         self.now=False  
@@ -38,7 +41,6 @@ class Node():
         
     #@async
     def start_n3(self):
-        print self.remote
         for i in range(6):
             self.remote.print_some()
             

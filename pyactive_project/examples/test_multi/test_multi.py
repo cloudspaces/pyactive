@@ -12,17 +12,20 @@ class Server(object):
     _parallel = []
     
     def add_actors(self, list_actors):
+        print list_actors
         self.amulti = AMulti(list_actors)
         self.smulti = SMulti(list_actors, self._atom)
-    
+        self.list_actors = list_actors
     def add(self, x, y):
         self.amulti.add(x, y)
     
     def sync_add(self, x, y):
         result =  self.smulti.sync_add(x, y)
-        print 'siiiiiiiiiiiiiiiiiiiiii', result
+        print result.values()
     def print_references(self):
-        print self.smulti.get_reference()
+        for a in range(16):
+            print 'hola'
+            print self.smulti.get_reference().keys()
 class Calc():
     _sync = {'sync_add':'1', 'get_reference':'1'}
     _async = ['add']
@@ -36,6 +39,7 @@ class Calc():
         sleep(2)
         return x+y
     def get_reference(self):
+        print self.proxy
         return self.proxy
 class Calc1():
     _sync = {'sync_add':'1', 'get_reference':'1'}
@@ -45,7 +49,6 @@ class Calc1():
         
     def add(self, x, y):
         print x+y
-        
     def sync_add(self, x, y):
         return x+y 
     def get_reference(self):

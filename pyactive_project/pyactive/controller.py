@@ -20,7 +20,6 @@ def start_controller(controllerType):
     controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Actor', 'launch', 'new_dispatcher', 'ParallelWrapper', 'new_group'], -1)
     global timeController
     timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval'], -1)
-    
 
 
 def tracer(func,atom):
@@ -39,13 +38,14 @@ def tracer2(func,atom):
 
 class Host(object):
     _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1' }
-    _async = ['shutdown']
+    _async = ['shutdown', 'hello']
     _ref = ['spawn_id', 'lookup' ]
     _prallel = []
     
     def __init__(self, transport=()):
         self.name = 'local'
         self.objects = {}
+        self.locks = {}
         self.dispatcher = self
         self.tasks = {}
         self.TRACE = False
@@ -64,8 +64,11 @@ class Host(object):
      
     def spawn_id(self, oid, module, kclass, params=[]):
         module_ = self.my_import(module)
+        
         #instance object save to obj variable
         obj = getattr(module_, kclass)(*params)
+        obj.keep_alive = keep_alive
+
         #aref object
         aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
         #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
@@ -80,8 +83,7 @@ class Host(object):
         obj.id = oid
         obj._atom = a
         refList = obj.__class__._ref
-#        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
-        
+
         if self.TRACE:
             a.send2 = tracer2(a.send2, self.tracer)
         
@@ -90,10 +92,14 @@ class Host(object):
         
         if self.TRACE:
             a.receive = tracer(a.receive, self.tracer)
-            
-        a.parallelList = obj.__class__._parallel     
-#        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
-        a.init_parallel()    
+
+        parallelList = obj.__class__._parallel
+        syncList = obj.__class__._sync.keys() 
+        asyncList = obj.__class__._async
+        a.sync_parallel = set(syncList)&set(parallelList)
+        a.async_parallel = set(asyncList)&set(parallelList)
+        lock = a.init_parallel()
+        self.locks[aref] = lock
         #Finally run object because it's ready now
         a.run()
         
@@ -116,7 +122,7 @@ class Host(object):
         else:
             raise Exception('registering remote host atoms not allowed')
 
-    def set_tracer(self,proxy):
+    def set_tracer(self, proxy):
         self.TRACE = True
         self.tracer = proxy
         return True    
@@ -144,13 +150,15 @@ class Host(object):
         client.asyncList = copy(kclass_._async)
         client.refList = copy(kclass_._ref)
         client.syncList = copy(kclass_._sync)
-#        client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
-#        client.refList = list(methodsWithDecorator(kclass_, 'ref'))
-#        client.syncList = methodsWithSync(kclass_, 'sync') 
- 
+
         client.host = self
         select_time(packageName)
-        proxy = Proxy(client, _from)
+        if _from in self.locks.keys():
+            lock = self.locks[_from]
+            proxy = Proxy(client, _from, lock)
+        else:
+            proxy = Proxy(client, _from, None)
+
         return proxy
 
     def _shutdown(self):
@@ -214,11 +222,12 @@ class Host(object):
     def _loads(self, param):
         if isinstance(param, AtomRef):
             _from = controller.get_current()
-            if(_from == param.get_aref()):
+            if _from == param.get_aref():
                 aurl = urlparse(_from)
                 obj = Auto_Proxy(self.objects[aurl.path].obj, _from)
-            else:    
+            else:
                 obj = self._lookup(param.get_aref(), _from)
+
             return obj
         elif isinstance(param, list):
             return [self._loads(elem) for elem in param]
@@ -229,7 +238,9 @@ class Host(object):
         __import__(name)
         return sys.modules[name]    
 
-        
+    
+def keep_alive():
+    return True           
         
 def init_host(transport=()):
     a = controller.Actor()
@@ -247,12 +258,17 @@ def init_host(transport=()):
     return a.get_proxy()
 
 def new_group(aref):
-    a = controller.Actor()
+    a = controller.MultiActor()
     a.host = host
     a.aref = aref+'/multi'
     host.register(a.aref, a)
-    a.ref_on()
-    a.run()
+    return a
+
+def new_supervisor(aref):
+    a = controller.Actor()
+    a.host = host
+    a.aref = aref+'/dev'
+    host.register(a.aref, a)
     return a
 
 def launch(func, params=[]):
@@ -266,9 +282,9 @@ def sleep(seconds):
 
 def interval(time, f, *args, **kwargs):
     timeController.interval(time, f, *args, **kwargs)
-    
 def later(time, f, *args, **kwargs):
     timeController.later(time, f, *args, **kwargs)
 def send_timeout():
     controller.send_timeout()
-    
+def send_timeout_multi(channel, rpc_list):
+    controller.send_timeout_multi(channel, rpc_list)

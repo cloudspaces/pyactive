@@ -5,11 +5,11 @@ import controller
 from constants import PARAMS, RESULT
 import inspect
 
-class Ref():
+class Ref(object):
     pass
     
 def ref_l(f):
-    def wrap_ref_l(*args):
+    def wrap_ref_l(*args):         
         args[0][PARAMS] = controller.get_host()._loads(args[0][PARAMS])
         return f(*args)
     return wrap_ref_l

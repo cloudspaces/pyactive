@@ -42,7 +42,7 @@ def test_log():
  
 
 def main():
-    start_controller('pyactive_thread')
+    start_controller('tasklet')
     launch(test_log)
   
 if __name__ == "__main__":

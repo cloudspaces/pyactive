@@ -29,11 +29,12 @@ def test_hello(test):
     
 def test_throw_timeout(test):
     n2 = test.host.spawn_id('2', 'test_sync', 'Server', [])
-    try:
-        n2.throw_timeout()
-        test.assertTrue(False)
-    except(TimeoutError):
-        test.assertTrue(True)
+#     try:
+    hola = n2.throw_timeout()
+    print hola
+    test.assertTrue(False)
+#     except(TimeoutError):
+#         test.assertTrue(True)
 
 class Test(unittest.TestCase):
     

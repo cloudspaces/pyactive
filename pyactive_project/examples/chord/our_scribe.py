@@ -240,17 +240,17 @@ def start_remote_node():
     cont = 11
     retry = 0
     index=0
-#    tcpconf = ('tcp', ('127.0.0.1', 6377))
-#    host = init_host(tcpconf)
-    momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
-    host = init_host(momconf)
+    tcpconf = ('tcp', ('127.0.0.1', 6377))
+    host = init_host(tcpconf)
+#     momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+#     host = init_host(momconf)
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'scribe', 'ScribeNode', [])
         cont += 1
     for i in range(num_nodes):    
         nodes_h[i].init_node()
-    remote_aref = 'mom://s1/scribe/ScribeNode/1'   
-#    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
+#     remote_aref = 'mom://s1/scribe/ScribeNode/1'   
+    remote_aref = 'atom://127.0.0.1:1432/chord/Node/2'
     remote_node = host.lookup(remote_aref)
 
     while index < num_nodes:

@@ -6,28 +6,15 @@ import sys
 from pyactive.controller import init_host, launch, start_controller,sleep
 
 from time import time
-<<<<<<< .mine
-NUM_NODES = 50000
-NUM_MSGS = 100
-=======
 NUM_NODES = 100
 NUM_MSGS = 10000
->>>>>>> .r70
 
 class Node():
-<<<<<<< .mine
-    _sync = {'is_finished':'1'}
-    _async = ['set_next', 'init_token', 'take_token']
-    _ref = ['set_next']
-    _parallel = []
-    
-=======
     _sync = {'is_finished': '1', 'get_cnt': '1'}
     _async = ['init_token', 'take_token', 'set_next']
     _ref = ['set_next']
     _parallel = []
     
->>>>>>> .r70
     def __init__(self,id=None,next=None):
         self.id = id
         self.next = next  

@@ -216,10 +216,10 @@ def start_node():
     cont = 1
     retry = 0
     index=0
-#    tcpconf = ('tcp', ('127.0.0.1', 1234))
-#    host = init_host(tcpconf)
-    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
-    host = init_host(momconf)
+    tcpconf = ('tcp', ('127.0.0.1', 1234))
+    host = init_host(tcpconf)
+    # momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+    # host = init_host(momconf)
 
     log = host.spawn_id('log','chord_log','LogUML',[])
     host.set_tracer(log)
@@ -253,10 +253,10 @@ def start_remote_node():
     cont = 21 + 50
     retry = 0
     index = 0
-#    tcpconf = ('tcp', ('127.0.0.1', 6375))
-#    host = init_host(tcpconf)
-    momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
-    host = init_host(momconf)
+    tcpconf = ('tcp', ('127.0.0.1', 6375))
+    host = init_host(tcpconf)
+    # momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+    # host = init_host(momconf)
     
     for i in range(num_nodes):
         nodes_h[i] = host.spawn_id(str(cont), 'chord_protocol', 'Node', [])

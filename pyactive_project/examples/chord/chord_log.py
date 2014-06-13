@@ -36,6 +36,7 @@ class LogUML():
         uml.append('\n')
         for msg in self.events:
             #try:
+            print msg[FROM]
             fromref = urlparse(msg[FROM])
             toref = urlparse(msg[TO])
             if not self.nodes.has_key(fromref.path):
