@@ -60,7 +60,8 @@ class Proxy(Ref):
 
 
     def sync_remote_call(self, methodname, vargs, kwargs):
-
+#         print 'SOC AL PROXY', self._from, self.client._id
+#         print 'SOC DINS EL SYNC CALL semafor meu', self.lock
         msg = {}
         msg[METHOD] = methodname
         msg[PARAMS] = vargs
@@ -70,11 +71,13 @@ class Proxy(Ref):
         msg[RPC_ID] = rpc_id
         self.client.send(msg)
         if self.lock:
+#             print 'release_proxy', self._from, self.lock
             self.lock.release()
         #         time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
         self.my_later(methodname, rpc_id)
         result = self.client.receive_result()
         if self.lock:
+#             print 'acquire_proxy', self._from
             self.lock.acquire()
         if isinstance(result, PyactiveError):
             raise result

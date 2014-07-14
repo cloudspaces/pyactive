@@ -7,7 +7,7 @@ from proxy import Proxy, select_time, Auto_Proxy
 from util import Ref, AtomRef
 from copy import copy
 from exception import NotFoundDispatcher
-import sys
+import sys, types
 
 
 def get_host():
@@ -68,7 +68,9 @@ class Host(object):
         #instance object save to obj variable
         obj = getattr(module_, kclass)(*params)
         obj.keep_alive = keep_alive
-
+#         setattr(kclass, 'keep_alive', types.MethodType(keep_alive(), kclass))
+#         add_method = types.MethodType(keep_alive, obj, kclass)
+#         obj = add_method
         #aref object
         aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
         #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
@@ -83,7 +85,8 @@ class Host(object):
         obj.id = oid
         obj._atom = a
         refList = obj.__class__._ref
-
+#        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
+        
         if self.TRACE:
             a.send2 = tracer2(a.send2, self.tracer)
         
@@ -98,6 +101,7 @@ class Host(object):
         asyncList = obj.__class__._async
         a.sync_parallel = set(syncList)&set(parallelList)
         a.async_parallel = set(asyncList)&set(parallelList)
+#        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
         lock = a.init_parallel()
         self.locks[aref] = lock
         #Finally run object because it's ready now
@@ -150,7 +154,10 @@ class Host(object):
         client.asyncList = copy(kclass_._async)
         client.refList = copy(kclass_._ref)
         client.syncList = copy(kclass_._sync)
-
+#        client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
+#        client.refList = list(methodsWithDecorator(kclass_, 'ref'))
+#        client.syncList = methodsWithSync(kclass_, 'sync') 
+ 
         client.host = self
         select_time(packageName)
         if _from in self.locks.keys():
@@ -288,3 +295,4 @@ def send_timeout():
     controller.send_timeout()
 def send_timeout_multi(channel, rpc_list):
     controller.send_timeout_multi(channel, rpc_list)
+    

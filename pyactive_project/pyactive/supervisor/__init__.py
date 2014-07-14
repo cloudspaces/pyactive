@@ -42,3 +42,5 @@ class Supervisor():
                     if (self.retries[key] > self.max_retries):
                         self.owner.failure_detect(self.actors[key])
                         self.retries[key] = 0
+                        
+           

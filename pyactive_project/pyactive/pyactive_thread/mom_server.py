@@ -14,7 +14,7 @@ class Server(object):
         self.conn.connect(wait=True)
         
 
-    def subs(self,listener,topic,headers={}):
+    def subs(self, listener, topic, headers={}):
         self.conn.set_listener('', listener)
         self.conn.subscribe(destination=topic,ack='auto',headers=headers)
 

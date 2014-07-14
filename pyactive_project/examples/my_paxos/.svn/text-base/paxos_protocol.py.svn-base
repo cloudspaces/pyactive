@@ -40,7 +40,6 @@ class Proposer (object):
         '''
         self.promises_rcvd = set()
         self.proposal_id   = ProposalID(self.next_proposal_number, self.id)
-        
         self.next_proposal_number += 1
         #multi to all acceptors!! 
         self.amulti.onPrepare(self.proxy, self.proposal_id)
@@ -65,7 +64,7 @@ class Proposer (object):
             if prev_accepted_value is not None:
                 self.proposed_value = prev_accepted_value
 
-        if len(self.promises_rcvd) > self.quorum_size/2:
+        if len(self.promises_rcvd) > self.quorum_size/2:    
             if self.proposed_value is not None:
                 self.amulti.accept(self.id, self.proposal_id, self.proposed_value)
                 
@@ -81,8 +80,7 @@ class Acceptor (object):
         self.accepted_value = None
         self.promised_id = None
         
-    def set_multi(self, learners):
-        print learners
+    def set_multi(self, learners): 
         self.learners = learners
         self.amulti = AMulti(self.learners)
         

@@ -287,7 +287,7 @@ class MOMDispatcher(Actor):
 
     def _stop(self):
         self.session.close()
-        super(MOMDispatcher,self)._stop()
+        super(MOMDispatcher,self).stop()
     
     def on_message(self, headers, message):
         try:
