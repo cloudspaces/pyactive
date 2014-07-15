@@ -16,4 +16,5 @@ host = init_host(momconf)
 aref = 'mom://s1/server/Server/0'
 ref = host.lookup(aref)
 
-ref.run_clients()
+ref.stop_clients()
+#ref.run_clients()

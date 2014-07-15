@@ -5,11 +5,12 @@ Created on 14/07/2014
 '''
 from pyactive.controller import init_host, launch, serve_forever,  start_controller, sleep, interval
 from pyactive.exception import TimeoutError
+
 class Client():
     _sync = {'get_reference':'1'}
     _async = ['subscribe', 'unsubscribe', 'run', 'stop']
     _ref = []
-    _parallel = []
+    _parallel = ['run']
     
     def __init__(self, server):
         self.server = server
@@ -25,19 +26,19 @@ class Client():
     def run(self):
         print self.id, ' running...'
         self.run_state = True
-        self.run_cycle()
+        self.t = interval(2, run_cycle, self.server)
+
     
     def stop(self):
-        self.run_state = False
+        self.t.set()
+        print 'Stopped'
             
-    def run_cycle(self):
-        while self.run_state:
-            self.server.do_something(['12', 'true', 'rasr'])
-            sleep(3)
+
     def get_reference(self):        
         return self.reference
      
-        
+def run_cycle(server):
+    server.do_something(['12', 'true', 'rasr'])        
 def test3():
     references = []
     momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
