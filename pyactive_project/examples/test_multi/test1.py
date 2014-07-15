@@ -10,7 +10,7 @@ class Server(object):
     _ref = ['add_atoms']
  
     def add_atoms(self, list_actors):
-        self.multi = AMulti(list_actors, self._atom)
+        self.multi = AMulti(self._atom, list_actors)
         
     def add(self, x, y):
         self.multi.add(x, y)

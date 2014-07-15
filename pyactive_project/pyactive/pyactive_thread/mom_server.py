@@ -9,7 +9,7 @@ import time
 
 class Server(object):
     def __init__(self,host='127.0.0.2',port=61613):
-        self.conn = stomp.Connection( host_and_ports=[(host, port)])
+        self.conn = stomp.Connection(host_and_ports=[(host, port)])
         self.conn.start()
         self.conn.connect(wait=True)
         

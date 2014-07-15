@@ -10,7 +10,7 @@ import copy
 import exceptions
 
 class AbstractMulti(object):
-    def __init__(self, list_actors):
+    def __init__(self, list_actors=[]):
         self.dict_actors = {}
         
         self.attach_list(list_actors)
@@ -21,17 +21,17 @@ class AbstractMulti(object):
         self.dict_actors[actor.get_aref()] = actor
     
     def detach(self, actor):
-        del self.dict_actors[actor.get_aref()]        
+        del self.dict_actors[actor.get_aref()]   
+             
     def attach_list(self, actors):
         for actor in actors:
             self.attach(actor)
+            
 class AMulti(AbstractMulti):
-    def __init__(self, list_actors):
+    def __init__(self, list_actors=[]):
         AbstractMulti.__init__(self, list_actors)
     def __getattr__(self, name):
-        return _RemoteMethod2(self.dispatch, name)
-    
-        
+        return _RemoteMethod2(self.dispatch, name)        
     def dispatch(self, methodname, vargs, kwargs):
         for a in self.dict_actors.values():
             getattr(a, methodname)(*vargs)
@@ -39,7 +39,7 @@ class AMulti(AbstractMulti):
     
 class SMulti(AbstractMulti):
     
-    def __init__(self, list_actors, atom):
+    def __init__(self, atom, list_actors=[]):
         AbstractMulti.__init__(self, list_actors)
         self.own_actor = atom
         self.actor = new_group(self.own_actor.aref)

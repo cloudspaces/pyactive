@@ -14,7 +14,7 @@ class Server(object):
     def add_actors(self, list_actors):
         print list_actors
         self.amulti = AMulti(list_actors)
-        self.smulti = SMulti(list_actors, self._atom)
+        self.smulti = SMulti(self._atom, list_actors)
         self.list_actors = list_actors
     def add(self, x, y):
         self.amulti.add(x, y)

@@ -3,11 +3,7 @@ Created on 13/02/2014
 
 @author: Edgar Zamora Gomez
 '''
-'''
-Created on 29/10/2013
 
-@author: Edgar Zamora Gomez
-'''
 import collections
 from pyactive.Multi import SMulti, AMulti
 ProposalID = collections.namedtuple('ProposalID', ['number', 'uid'])

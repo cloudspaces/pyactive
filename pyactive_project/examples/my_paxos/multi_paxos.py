@@ -49,7 +49,7 @@ class Server(object):
         self.list_acceptors = list_acceptors
         self.set_server_dict()
         self.amulti = AMulti(self.list_acceptors)
-        self.smulti = SMulti(self.list_acceptors, self.proxy)
+        self.smulti = SMulti(self.proxy, self.list_acceptors)
     def get_accepted_values(self):
         return self.accepted_value.values()
     
