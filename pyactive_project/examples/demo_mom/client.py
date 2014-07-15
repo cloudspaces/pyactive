@@ -26,22 +26,22 @@ class Client():
     def run(self):
         print self.id, ' running...'
         self.run_state = True
-        self.t = interval(2, run_cycle, self.server)
+        self.stop_event = interval(2, self.run_cycle, )
 
     
     def stop(self):
-        self.t.set()
+        self.stop_event.set()
         print 'Stopped'
             
 
     def get_reference(self):        
         return self.reference
      
-def run_cycle(server):
-    server.do_something(['12', 'true', 'rasr'])        
+    def run_cycle(self):
+        self.server.do_something(['12', 'true', 'rasr'])    
+   
 def test3():
-    references = []
-    momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+    momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test_edgar'})
     host = init_host(momconf)
     #host = init_host(('127.0.0.1',4329),True)
     #host = Host(host)
@@ -63,11 +63,11 @@ def test3():
     
     #sleep(1)
     #host.shutdown()
-    list = []
+    check_ref_list = []
     for node in nodes.values():
-        r = node.get_reference()
-        if not r in list:
-            list.append(r)
+        reference = node.get_reference()
+        if not reference in check_ref_list:
+            check_ref_list.append(reference)
         else:
             print 'error: some client has the same reference'
     print 'all ok'

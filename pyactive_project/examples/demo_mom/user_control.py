@@ -8,7 +8,7 @@ from pyactive.exception import TimeoutError
 
 start_controller("pyactive_thread")
 
-momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+momconf = ('mom',{'name':'c1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test_edgar'})
 host = init_host(momconf)
 #host = init_host(('127.0.0.1',4329),True)
 #host = Host(host)

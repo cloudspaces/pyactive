@@ -36,7 +36,7 @@ class Server:
                             
     #channel.send({'timeout':'TRUE'})
 def test3():
-    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test'})
+    momconf = ('mom',{'name':'s1','ip':'127.0.0.1','port':61613,'namespace':'/topic/test_edgar'})
     host = init_host(momconf)
     #host = init_host(('127.0.0.1',1290),True)
     #host = Host(hostname)
