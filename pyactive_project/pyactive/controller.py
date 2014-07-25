@@ -9,7 +9,6 @@ from copy import copy
 from exception import NotFoundDispatcher
 import sys, types
 
-
 def get_host():
     return host
 
@@ -20,7 +19,6 @@ def start_controller(controllerType):
     controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Actor', 'launch', 'new_dispatcher', 'ParallelWrapper', 'new_group'], -1)
     global timeController
     timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval'], -1)
-
 
 def tracer(func,atom):
     """Tracer the call messages"""
