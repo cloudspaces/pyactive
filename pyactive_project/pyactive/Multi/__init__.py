@@ -21,7 +21,8 @@ class AbstractMulti(object):
         self.dict_actors[actor.get_aref()] = actor
     
     def detach(self, actor):
-        del self.dict_actors[actor.get_aref()]   
+        if actor.get_aref in self.dict_actors.keys():
+            del self.dict_actors[actor.get_aref()]   
              
     def attach_list(self, actors):
         for actor in actors:

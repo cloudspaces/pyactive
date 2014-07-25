@@ -288,7 +288,7 @@ def sleep(seconds):
     timeController.sleep(seconds)
 
 def interval(time, f, *args, **kwargs):
-    timeController.interval(time, f, *args, **kwargs)
+    return timeController.interval(time, f, *args, **kwargs)
 def later(time, f, *args, **kwargs):
     timeController.later(time, f, *args, **kwargs)
 def send_timeout():
