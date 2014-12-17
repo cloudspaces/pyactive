@@ -55,10 +55,12 @@ using the standard threading library.  We validated the performance and expressi
 * **serve_forever**. It’s used like launch function but once the function ends, the program continues.
 
 
-## How to use PyActive? 
+## What do you need to run PyActive? 
 
 
 In this section we explain all you need to use this middleware. It's easy!
+
+Into Pyactive_Project folder you can find how to install the middleware in INSTALL.txt.
 
 **Requirements**
 * If you only use the threads module, you only need Python 2.7
@@ -82,42 +84,59 @@ Choose the module using the function: 'start_controller'.  Nowadays,
 you can put either the parameter 'tasklet' or 'atom_thread' to choose the module.
 Note that you choose the tasklet module, you need the Stacklees Python. 
 
+## Hello_world example
 
-## Perspectives uses and future work 
+In this section you can see a simple Hello World synchronous and asynchronous. In Pyactive_Project you can find more complex examples into Examples folder.
+
+**Hello_World Synchronous**
+
+        from pyactive.controller import init_host, launch,start_controller, sleep
+        class Server():
+        	_sync = {'hello_world':'1'}
+        	_async = []
+        	_parallel = []
+        	_ref = []
+        	def hello_world(self):
+        		return 'hello world'
+        
+        def test():
+        	host = init_host()
+        	
+        	# parameters 1 = 'id', 'test_sync' = module name, 'Server' = class name
+        	n1 = host.spawn_id('1', 'test_sync', 'Server', [])
+        	
+        	response = n1.hello_world()
+        	print response
+        
+        if __name__ == '__main__':
+        	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
+        	start_controller('tasklet')
+        	launch(test)
+			
+**Hello_World Asynchronous**
+
+        from pyactive.controller import init_host, launch,start_controller, sleep
+        class Server():
+        	_sync = {}
+        	_async = ['hello_world']
+        	_parallel = []
+        	_ref = []
+        	def hello_world(self):
+        		print 'hello world'
+        
+        def test():
+        	host = init_host()
+        	
+        	# parameters 1 = 'id', 'test_async' = module name, 'Server' = class name
+        	n1 = host.spawn_id('1', 'test_async', 'Server', [])
+        	
+        	n1.hello_world()
+        
+        if __name__ == '__main__':
+        	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
+        	start_controller('tasklet')
+        	launch(test)
 
 
-* **Simulation and implementation of distributed algorithms**: Pyactive can 
-  considerably simplify the development of distributed algorithms. It is 
-  possible to simulate algorithms in a single machine before they are 
-  deployed in an experimentation testbed. We implemented Chord in the past 
-  for an event-based traditional p2p simulator (PlanetSim) and the code is 
-  complex to understand and follow. On the other hand, our implementation 
-  using Pyactive is more succinct, and quit similar to the original algorithms 
-  proposed in the Chord paper. The main reason is that Pyactive clearly separates 
-  communication code from algorithm code inside methods. We plan to use Pyactive 
-  in our distributed systems course and in our peer-to-peer and networking courses.
 
-* **Web middleware**: Pyactive has a big potential to ease the development of REST 
-  and Web RPC platforms. Web asynchronous networking libraries that use green 
-  threads. We are even considering to create a novel version of Pyactive on top of
-  one these libraries. In particular, we plan to rewrite some server code of the
-  OpenStack Swift is based on WSGI python servers that already use green threads
-  to improve the performance. But the current code is tangling communication, 
-  marshalling and distributed storage algorithms. Pyactive can decouple these layers
-  and make the code performance and easy to understand ans modify
 
-* **Multi-core programming**: One of the promises of message passing concurrency 
-  is the future of multi-core concurrency programming. Erlang offers truly 
-  parallelism over different cores with Symmetric Multi-Processing(SMP). They mainly 
-  added multi-threading support to the Erlang VM, so that different lightweight 
-  process schedulers can live inside their native threads. In our case, stackless 
-  also permits to have different microthreads living inside their own thread or 
-  process. But python threads do not benefit from multi-core programming due to 
-  the GIL (Global Interpreter lock). Instead of that, we could support multi-core 
-  programming using the python multiprocessing library.
-
-* **Distributed continuations**: We outline an important future work with the 
-  combination of RPCs and distributed continuations in Pyactive. Stackless python 
-  permits to serialize microthreads in their current frames. It is thus feasible
-  to create novel call abstractions supporting distributed continuations between
-  different hosts.
