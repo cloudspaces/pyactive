@@ -3,7 +3,6 @@
 
 ## Description 
 
-
 PyActive is a novel object oriented implementation of the Actor model in Python. 
 What it is novel in our approach is the tight integration with OO concepts that 
 considerably simplifies the use of this library. 
