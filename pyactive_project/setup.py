@@ -10,5 +10,5 @@ setup(
     url='http://ast-deim.urv.cat/pyactive',
     license='LICENSE.txt',
     description='Active Object Middleware',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
 )
