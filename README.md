@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/cloudspaces/pyactive.png?label=ready&title=Ready)](https://waffle.io/cloudspaces/pyactive)
 # PyActive 
 
 
