@@ -5,15 +5,12 @@ from pyactive.controller import init_host, launch, start_controller, sleep
 
 class Node(object):
     _sync = {'send_msg':'50', 'return_msg':'50'}
-    _async = ['print_some', 'start', 'start_n3']
-    _parallel = ['start']
-    _ref = []
-    
-    def __init__(self,id=None,n2=None):
-        self.id = id
-        self.now=False
+    _async = ['print_some', 'start', 'start_n3', "registry_node"]
+    _parallel = []
+    _ref = ["registry_node"]
+
+    def registry_node(self, n2):
         self.remote = n2
-        self.cnt = 0
 
     def send_msg(self):
         print self.remote
@@ -23,7 +20,8 @@ class Node(object):
 
     def return_msg(self):
         print 'im here'
-        sleep(5)
+        sleep(10)
+        print 'after sleep'
         return 'Hello World'
 
     def print_some(self):
@@ -36,21 +34,21 @@ class Node(object):
 
     def start_n3(self):
         for i in range(6):
-            print 'hola que tal'
             self.remote.print_some()
 
 def test1():
     host = init_host()
-    n2 = host.spawn_id('2','parallel1','Node',['n2'])
-    n1 = host.spawn_id('1','parallel1','Node',['n1',n2])
-    n3 = host.spawn_id('3','parallel1','Node',['n3',n1])
+    n2 = host.spawn_id('2','parallel1','Node',[])
+    n1 = host.spawn_id('1','parallel1','Node',[])
+    n3 = host.spawn_id('3','parallel1','Node',[])
+    n2.registry_node(n1)
+    n1.registry_node(n2)
+    n3.registry_node(n1)
     n1.start()
     sleep(1)
     n3.start_n3()
-    sleep(5)
-#    n2.stop()
-#    n1.stop()
-#    n3.stop()
+    sleep(10)
+
 
 def main():
     start_controller('pyactive_thread')

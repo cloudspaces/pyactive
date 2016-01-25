@@ -70,11 +70,12 @@ class Proxy(Ref):
         msg[RPC_ID] = rpc_id
         self.client.send(msg)
         if self.lock:
-#             print 'release_proxy', self._from, self.lock
+            # print 'release_proxy', self._from, self.lock
             self.lock.release()
-        #         time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
+           # time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
         self.my_later(methodname, rpc_id)
         result = self.client.receive_result()
+        # print 'result', result
         if self.lock:
 #             print 'acquire_proxy', self._from
             self.lock.acquire()

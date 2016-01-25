@@ -14,10 +14,10 @@ from urlparse import urlparse
 import pyactive.controller as controller
 import cPickle, types
 import copy
-pending = {} 
-threads = {}   
+pending = {}
+threads = {}
 
-    
+
 class Channel(Queue):
     def __init__(self):
         Queue.__init__(self)
@@ -28,7 +28,7 @@ class Channel(Queue):
 
 
 class Actor(Abstract_actor):
-    
+
     def __init__(self):
         Abstract_actor.__init__(self)
         self.__lock = None
@@ -42,20 +42,20 @@ class Actor(Abstract_actor):
             if message==StopIteration:
                 break
             self.receive(message)
-    
+
     def registry_object(self, obj):
         self.obj = obj
-        
+
     def run(self):
         Abstract_actor.run(self)
-        
+
         self.thread = Thread(target=self.__processQueue)
         self.thread.start()
         threads[self.thread] = self.aref
-        
+
     def stop(self):
         self.channel.send(StopIteration)
-    
+
     def send(self,msg):
         msg[TO] = self.aref
         msg[TYPE] = CALL
@@ -64,12 +64,12 @@ class Actor(Abstract_actor):
             pending[msg[RPC_ID]] = 1
             msg[SRC] = self.channel
         self.out.send(msg)
-    
+
     def set_pending(self, rpc_id):
         pending[rpc_id] = 1
-        
+
     def init_parallel(self):
-        '''Create Lock to guarantee concurrency when it uses parallel wrapper. 
+        '''Create Lock to guarantee concurrency when it uses parallel wrapper.
         In addition it put parallel wrapper in the correct objects methods'''
         self.__lock = Lock()
         for name in self.sync_parallel:
@@ -82,9 +82,9 @@ class Actor(Abstract_actor):
         '''receive result of synchronous calls'''
         result = self.channel.receive(timeout)
         return result[RESULT]
-    
-    
-    def receive(self,msg):   
+
+
+    def receive(self,msg):
         ''' receive messages and invokes object method'''
         invoke = getattr(self.obj, msg[METHOD])
         params = msg[PARAMS]
@@ -120,13 +120,13 @@ class Actor(Abstract_actor):
 #             else:
 #                 result = invoke(*params)
         except PyactiveError,e:
-            result= e    
-            msg[ERROR]=1  
+            result= e
+            msg[ERROR]=1
         except TypeError, e2:
             result = MethodError()
             msg[ERROR]=1
-    
-        
+
+
     def receive_sync(self, result, rpc_id):
         msg = self.callbacks[rpc_id]
         del self.callbacks[rpc_id]
@@ -141,10 +141,10 @@ class Actor(Abstract_actor):
             _from = msg2[FROM]
             msg2[FROM] = self.aref
             msg2[TO] = _from
-            self.send2(target,msg2)     
+            self.send2(target,msg2)
     def get_proxy(self):
         return self.host.load_client(self.channel, self.aref, get_current())
-    
+
 class MultiActor(Actor):
     def receive_result(self, timeout=None):
         '''receive result of synchronous calls'''
@@ -156,7 +156,7 @@ class ParallelActor(Actor):
         '''receive result of synchronous calls'''
         result = self.channel.receive(timeout)
         return result[FROM], result[RESULT]
-           
+
 class ParallelSyncWraper():
     def __init__(self, send, aref, principal_thread, name, lock):
         self.__name = name
@@ -181,7 +181,7 @@ class ParallelSyncWraper():
                 t1 = Thread(target=self.invoke, args=(self.__send,rpc_id, self.__lock, args,kwargs))
                 t1.start()
                 threads[t1] = self.__aref
-        
+
     def invoke(self, func, rpc_id, lock, args=[], kwargs=[]):
         lock.acquire()
 
@@ -189,7 +189,7 @@ class ParallelSyncWraper():
         lock.release()
 
         self.__principal_thread.receive_sync(result, rpc_id)
-  
+
 
 class ParallelAsyncWraper():
     def __init__(self, send, aref, lock):
@@ -200,17 +200,17 @@ class ParallelAsyncWraper():
         t1 = Thread(target=self.invoke, args=(self.__send, args, kwargs))
         t1.start()
         threads[t1] = self.__aref
-        
+
     def invoke(self, func, args=[], kwargs=[]):
         self.__lock.acquire()
 
 
         func(*args, **kwargs)
-        self.__lock.release()   
+        self.__lock.release()
 
 
 class TCPDispatcher(Actor):
-    
+
     def __init__(self,host, addr):
         Actor.__init__(self)
         ip, port = addr
@@ -218,33 +218,33 @@ class TCPDispatcher(Actor):
         self.conn = Server(ip, port, self)
         self.addr = addr
         self.host = host
-        
+
         self.callback = {}
-        
+
     def receive(self,msg):
         if msg[MODE]==SYNC and msg[TYPE]==CALL:
             self.callback[msg[RPC_ID]]= msg[SRC]
-        
+
         msg[SRC] = self.addr
         try:
             self.conn.send(msg)
         except Exception,e:
             print e,'TCP ERROR 2'
-             
+
     def _stop(self):
         self.channel.send(StopIteration)
         self.conn.close()
-        
+
     def is_local(self, name):
         return name == self.name
-   
+
     def on_message(self, msg):
         try:
             if msg[TYPE]==RESULT:
                 if pending.has_key(msg[RPC_ID]):
                     del pending[msg[RPC_ID]]
                     target = self.callback[msg[RPC_ID]]
-                    del self.callback[msg[RPC_ID]]       
+                    del self.callback[msg[RPC_ID]]
                     target.send(msg)
             else:
                 if msg[MODE]== SYNC:
@@ -256,7 +256,7 @@ class TCPDispatcher(Actor):
                 self.host.objects[aurl.path].channel.send(msg)
         except Exception,e:
             print e,'TCP ERROR 1'
-            
+
 class MOMDispatcher(Actor):
                     #,ConnectionListener):
 
@@ -271,7 +271,7 @@ class MOMDispatcher(Actor):
         self.session.subs(self,self.namespace,{'selector':"HOST='%s'"%self.name})
         self.callback = {}
 
-        
+
     def receive(self,msg):
         if msg[MODE]==SYNC and msg[TYPE]==CALL:
             self.callback[msg[RPC_ID]]= msg[SRC]
@@ -281,14 +281,14 @@ class MOMDispatcher(Actor):
             self.session.pub(parsed_msg,self.namespace,{'HOST':msg[TARGET],SRC:self.name})
         except Exception,e:
             print e,'MOM ERROR'
-            
+
     def is_local(self,name):
         return name == self.name
 
     def _stop(self):
         self.session.close()
         super(MOMDispatcher,self).stop()
-    
+
     def on_message(self, headers, message):
         try:
             msg = cPickle.loads(message)
@@ -308,14 +308,14 @@ class MOMDispatcher(Actor):
                 self.host.objects[aurl.path].channel.send(msg)
         except Exception,e:
             pass
-        
+
 def new_MOMdispatcher(host, dir):
     mom = MOMDispatcher(host, dir)
     mom.run()
     return mom
-            
+
 def new_TCPdispatcher(host, dir):
-    tcp = TCPDispatcher(host, dir) 
+    tcp = TCPDispatcher(host, dir)
     tcp.run()
     return tcp
 
@@ -327,12 +327,12 @@ def new_dispatcher(host, transport):
         return new_MOMdispatcher(host, transport[1])
     else:
         raise NotFoundDispatcher()
-           
+
 def get_current():
     current = current_thread()
     if threads.has_key(current):
-        return threads[current] 
-                
+        return threads[current]
+
 def send_timeout(channel,rpc_id):
     if pending.has_key(rpc_id):
         del pending[rpc_id]
@@ -340,7 +340,7 @@ def send_timeout(channel,rpc_id):
         msg[TYPE] = ERROR
         msg[RESULT] = TimeoutError()
         channel.send(msg)
-        
+
 def send_timeout_multi(channel, rpc_id_list):
     send_message =  False
     for rpc_id in rpc_id_list:
@@ -353,7 +353,7 @@ def send_timeout_multi(channel, rpc_id_list):
         msg[FROM] = 'timeout_controller'
         msg[RESULT] = 'error'
         channel.send(msg)
-    
+
 def launch(func, params=[]):
     t1 = Thread(target=func, args=params)
     threads[t1] = 'atom://localhost/'+func.__module__+'/'+func.__name__
@@ -361,8 +361,7 @@ def launch(func, params=[]):
     t1.join()
     host =  controller.get_host()
     host._shutdown()
-        
+
 def serve_forever(func, params=[]):
     threads[current_thread()] = 'atom://localhost/'+func.__module__+'/'+func.__name__
     func(*params)
-    
