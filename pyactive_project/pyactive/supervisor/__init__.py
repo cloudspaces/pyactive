@@ -9,8 +9,8 @@ class Supervisor():
         self.actors = {}
         self.retries = {}
         self.max_retries = retries
-        
-        self.multiActors = SMulti(actors, self.s_actor)
+
+        self.multiActors = SMulti( self.s_actor, actors)
         self.add_actors(actors)
         interval(time, self.ask_actors)
         #timer to indicate the frequency to ask to actors
@@ -18,16 +18,16 @@ class Supervisor():
         self.actors[actor.get_aref()] = actor
         self.retries[actor.get_aref()] = 0
         self.multiActors.attach(actor)
-    
+
     def add_actors(self, actors):
         for actor in actors:
             self.add_actor(actor)
-        
+
     def ask_actors(self):
         try:
             result = self.multiActors.keep_alive()
-            for k in result.keys(): 
-                self.retries[k] = 0 
+            for k in result.keys():
+                self.retries[k] = 0
         except:
             for key in self.actors.keys():
                 self.retries[key] +=1
@@ -42,5 +42,3 @@ class Supervisor():
                     if (self.retries[key] > self.max_retries):
                         self.owner.failure_detect(self.actors[key])
                         self.retries[key] = 0
-                        
-           

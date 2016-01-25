@@ -4,9 +4,8 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 from constants import METHOD, SYNC, ONEWAY, PARAMS, MODE, FROM, RPC_ID, MULTI
 import controller
 from util import Ref
-from exception import PyactiveError
 from copy import copy
-
+import exception
 import uuid
 
 
@@ -18,7 +17,7 @@ def select_time(packageName):
 
 
 class Auto_Proxy(Ref):
-    """This Proxy is used to auto-calls. 
+    """This Proxy is used to auto-calls.
     It allows one object can call itself how one direct object calls."""
 
     def __init__(self, obj, aref):
@@ -79,7 +78,7 @@ class Proxy(Ref):
         if self.lock:
 #             print 'acquire_proxy', self._from
             self.lock.acquire()
-        if isinstance(result, PyactiveError):
+        if isinstance(result, exception.PyactiveError):
             raise result
         else:
             return result

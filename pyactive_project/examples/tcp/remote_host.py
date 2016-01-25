@@ -11,18 +11,18 @@ def test_remote_spawn():
     remote_host.hello()
     print remote_host
     server = remote_host.spawn('s1','Server',[])
-    z = server.add(6,7)     
+    z = server.add(6,7)
     print z
     server.substract(6,5)
-    t = server.add(8,7)       
-    print t 
-   
-        
-        
+    t = server.add(8,7)
+    print t
+
+
+
 
 def main():
-    start_controller('tasklet')
+    start_controller('pyactive_thread')
     launch(test_remote_spawn)
-   
+
 if __name__ == "__main__":
     main()

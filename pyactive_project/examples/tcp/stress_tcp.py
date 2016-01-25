@@ -12,22 +12,22 @@ def test3():
     #oref = 'env2:simple:s1:Server'
     aref = 'tcp://127.0.0.1:1234/s1/Server/0'
     ref = host.lookup(aref)
- 
+
     init = time()
     for i in range (10000):
         z = ref.add(6,7)
     end = time()
-    
+
     print end - init
-    
+
     #sleep(3)
     host.shutdown()
 
 
 def main():
-    start_controller('tasklet')
+    start_controller('pyactive_thread')
     launch(test3)
     #test1()
-    
+
 if __name__ == "__main__":
     main()

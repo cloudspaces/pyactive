@@ -20,24 +20,24 @@ class Server:
         self.listener = listener
         self.thread = Thread(target=self.AcceptConnections, args=[listenSocket])
         self.thread.start()
-        
-        
+
+
     def AcceptConnections(self, listenSocket):
         while True:
-            self.AcceptEndpointConnections(listenSocket)   
+            self.AcceptEndpointConnections(listenSocket)
         print 'break while'
-        
+
     def AcceptEndpointConnections(self, listenSocket):
         clientSocket, clientAddress = listenSocket.accept()
         print "SERVER: Accepted connection from", clientAddress
         print "SERVER: Client socket", id(clientSocket._sock)
         EndPoint(self, clientSocket)
-    
+
     def send(self, msg):
         addr = msg[TARGET]
         data = cPickle.dumps(msg)
         conn = None
-        
+
         if self.endpoints.has_key(addr):
             end_point = self.endpoints[addr]
             conn = end_point.socket
@@ -45,53 +45,56 @@ class Server:
             conn = socket.socket(AF_INET, SOCK_STREAM)
             (ip, port) = addr.split(':')
             conn.connect((ip, int(port)))
-            
+
             self.endpoints[addr] = EndPoint(self, conn)
-            
+
         conn.send(struct.pack("!I", len(data)))
         conn.send(data)
-    
+
     def close(self):
         print "SERVER: Shutting down the server"
+        self.socket.shutdown(1)
         self.socket.close()
+        for endpoint in self.endpoints.values():
+            endpoint.Release()
         self.thread._Thread__stop()
-        
-    
+
+
 class EndPoint:
     packetSizeFmt = "!I"
     packetSizeLength = struct.calcsize(packetSizeFmt)
-    
+
     def __init__(self, server, epSocket):
         self.socket = epSocket
-        
+
         self.server = server
         self.init = False
-        
+
         self.thread = Thread(target=self._ManageSocket)
         self.thread.start()
-    
+
     def Release(self):
         self.socket.close()
         self.thread._Thread__stop()
-    
+
     def _ManageSocket(self):
         try:
             self._ReceivePackets()
         except socket.error, e:
             self.Release()
-            
+
     def _ReceivePackets(self):
         rawPacket = self._ReadIncomingPacket()
         while rawPacket:
             self._DispatchIncomingPacket(rawPacket)
             rawPacket = self._ReadIncomingPacket()
-    
+
     def _ReadIncomingPacket(self):
         sizeData = self._ReadIncomingData(self.packetSizeLength)
         if sizeData:
             dataLength = struct.unpack(self.packetSizeFmt, sizeData)[0]
             return self._ReadIncomingData(dataLength)
-        
+
     def _ReadIncomingData(self, dataLength):
         readBuffer = ""
         while len(readBuffer) != dataLength:
@@ -99,26 +102,22 @@ class EndPoint:
             if not data:
                 self.Release()
             readBuffer += data
-        
+
         return readBuffer
-    
+
     def _DispatchIncomingPacket(self, rawPacket):
         msg = cPickle.loads(rawPacket)
         if not self.init:
             self.server.endpoints[msg[SRC]]=self
             self.init= True
         self.server.listener.on_message(msg)
-        
+
     def _SendPacket(self, packetType, callID, payload):
         data = cPickle.dumps((packetType, callID, payload))
         self.socket.send(struct.pack("!I", len(data)))
         self.socket.send(data)
-        
+
     def send(self,data):
         self.socket.send(struct.pack("!I", len(data)))
         # Packet data.
-        self.socket.send(data)   
-    
-        
-        
-    
+        self.socket.send(data)

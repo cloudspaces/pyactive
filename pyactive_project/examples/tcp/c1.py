@@ -19,15 +19,13 @@ def test3():
         ref.wait_a_lot()
     except TimeoutError:
         print 'correct timeout'
-    
-    
+        
     sleep(3)
     host.shutdown()
 
-
 def main():
-    start_controller('tasklet')
+    start_controller('pyactive_thread')
     launch(test3)
-    
+
 if __name__ == "__main__":
     main()

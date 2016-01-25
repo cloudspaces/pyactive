@@ -10,36 +10,24 @@ class Server():
     _async = ['hello_world']
     _ref = []
     _parallel = []
-    
+
     def __init__(self):
         self.name = None
-    
+        print 'init_server'
+
 
     def hello_world(self):
         self.name = 'async done'
- 
+
     def get_name(self):
         return self.name
-    
+
     def registry_obj(self, obj):
         self.obj = obj
         return True
-    
-def test_hello(test):
-    n1 = test.host.spawn_id('1', 'test_async', 'Server', [])
-    n1.hello_world()
-    
-    result = n1.get_name()
-    test.assertEqual(result, 'async done')
-    
-def test_registry_object(test):
-    n1 = test.host.spawn_id('2', 'test_async', 'Server', [])
-    n2 = test.host.spawn_id('3', 'test_async', 'Server', [])
-    
-    test.assertTrue(n1.registry_obj(n2))
-    
+
 class Test(unittest.TestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         super(Test, cls).setUpClass()
@@ -47,11 +35,18 @@ class Test(unittest.TestCase):
         cls.host = init_host()
 
     def test_hello(self):
-        launch(test_hello, [self])    
-    
+        n1 = self.host.spawn_id('1', 'test_async', 'Server', [])
+        n1.hello_world()
+
+        result = n1.get_name()
+        self.assertEqual(result, 'async done')
+
     def test_registry_object(self):
-        launch(test_registry_object, [self])
-        
+        n1 = self.host.spawn_id('2', 'test_async', 'Server', [])
+        n2 = self.host.spawn_id('3', 'test_async', 'Server', [])
+
+        self.assertTrue(n1.registry_obj(n2))
+
     @classmethod
     def tearDownClass(cls):
         super(Test, cls).tearDownClass()
@@ -60,4 +55,5 @@ class Test(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    print 'hola que tal!!'
     unittest.main()
