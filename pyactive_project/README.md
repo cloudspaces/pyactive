@@ -1,8 +1,6 @@
 # PyActive
 
-
 ## Description
-
 
 PyActive is a novel object oriented implementation of the Actor model in Python.
 What it is novel in our approach is the tight integration with OO concepts that
@@ -47,7 +45,7 @@ using the standard threading library.  We validated the performance and expressi
 ## Basic Functions
 
 * **start_controller**: It's used to choose the module. At this moment, we can choose
-  between 'atom_thread' and 'tasklet'. Note that this decision can change the
+  between 'pyactive_thread' and 'tasklet'. Note that this decision can change the
   python version that you need. For example the 'tasklet' module needs Stackless Python.
 
 * **launch**: It's used to throw the main function which initializes the program. Once this function ends, the program will die.
@@ -76,17 +74,18 @@ You can download Stackless python at: [http://www.stackless.com/]
 
 PyActive contains some examples and tests. You can find them into the examples folder.
 
-        $> cd/pyactive_project
-        $> python ./examples/Hello_World/test_async.py
-        $> python ./examples/registry/first.py
-
-Choose the module using the function: 'start_controller'.  Nowadays,
+**Note:** Remember to choose the thread type using the function 'start_controller'.  Nowadays,
 you can put either the parameter 'tasklet' or 'pyactive_thread' to choose the module.
-Note that you choose the tasklet module, you need the Stacklees Python.
+Note that if you choose the tasklet module, before should have been installed the Stackless Python.
 
 ## Hello_world example
 
-In this section you can see a simple Hello World synchronous and asynchronous. In Pyactive_Project you can find more complex examples into examples folder.
+In this section you can see a simple Hello World synchronous and asynchronous. In Pyactive_Project you can find more complex examples into ´examples´ folder.
+
+To run the following examples:
+        $> cd/pyactive_project
+        $> python ./examples/hello_world/hello_world_sync.py
+        $> python ./examples/hello_world/hello_world_async.py
 
 **Hello_World Synchronous**
 
@@ -109,8 +108,8 @@ In this section you can see a simple Hello World synchronous and asynchronous. I
         	print response
 
         if __name__ == '__main__':
-        	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
-        	start_controller('tasklet')
+            #you can change the parameter 'pyactive_thread' to 'tasklet'  if you would like to run the Stackless model controller.
+        	start_controller('pyactive_thread')
         	launch(test)
 
 **Hello_World Asynchronous**
@@ -133,6 +132,6 @@ In this section you can see a simple Hello World synchronous and asynchronous. I
         	n1.hello_world()
 
         if __name__ == '__main__':
-        	#you can change the parameter 'tasklet' to 'pyactive_thread' if you like thread controller.
-        	start_controller('tasklet')
+        	#you can change the parameter 'pyactive_thread' to 'tasklet'  if you would like to run the Stackless model controller.
+        	start_controller('pyactive_thread')
         	launch(test)

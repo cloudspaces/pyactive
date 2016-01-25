@@ -11,14 +11,7 @@ ALternative 1: Use setuptools
 =============================
 
 
-python setup.py develop
-
-
-Uninstalling ATOM using setuptools
-==================================
-
-python setup.py develop -u
-
+python setup.py install
 
 ALternative 2:Set the PYTHONPATH
 =============================
@@ -38,13 +31,7 @@ ALternative 1: Use setuptools
 =============================
 
 
-python setup.py develop
-
-
-Uninstalling ATOM using setuptools
-==================================
-
-python setup.py develop -u
+python setup.py install
 
 
 Alternative  2: Set the PYTHONPATH
@@ -52,6 +39,3 @@ Alternative  2: Set the PYTHONPATH
 
 #atom location
 export PYTHONPATH='home/edgar/workspace/pyactive_project/
-
-
-
