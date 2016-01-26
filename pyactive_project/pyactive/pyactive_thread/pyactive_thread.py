@@ -11,6 +11,8 @@ from Queue import Queue
 from pyactive.abstract_actor import Abstract_actor
 from urlparse import urlparse
 
+import signal, sys
+
 import pyactive.controller as controller
 import cPickle, types
 import copy
@@ -362,6 +364,17 @@ def launch(func, params=[]):
     host =  controller.get_host()
     host._shutdown()
 
+def signal_handler(signal, frame):
+    print 'You pressed Ctrl+C!'
+    host =  controller.get_host()
+    host.shutdown()
+    sys.exit(0)
+
 def serve_forever(func, params=[]):
     threads[current_thread()] = 'atom://localhost/'+func.__module__+'/'+func.__name__
     func(*params)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    print 'Press Ctrl+C to kill the execution'
+    while True:
+        controller.sleep(1)

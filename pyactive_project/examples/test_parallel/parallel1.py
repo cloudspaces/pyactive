@@ -6,7 +6,7 @@ from pyactive.controller import init_host, launch, start_controller, sleep
 class Node(object):
     _sync = {'send_msg':'50', 'return_msg':'50'}
     _async = ['print_some', 'start', 'start_n3', "registry_node"]
-    _parallel = []
+    _parallel = ['start']
     _ref = ["registry_node"]
 
     def registry_node(self, n2):

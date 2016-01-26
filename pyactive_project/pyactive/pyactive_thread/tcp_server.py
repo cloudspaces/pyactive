@@ -53,7 +53,10 @@ class Server:
 
     def close(self):
         print "SERVER: Shutting down the server"
-        self.socket.shutdown(1)
+        try:
+            self.socket.shutdown(1)
+        except:
+            None
         self.socket.close()
         for endpoint in self.endpoints.values():
             endpoint.Release()

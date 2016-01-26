@@ -173,7 +173,7 @@ class Host(object):
                 atom.stop()
         self.objects = {}
         aurl = urlparse(self.aref)
-        self.objects[aurl.path] = self.atom
+        # self.objects[aurl.path] = self.atom
         if self.dispatcher != self:
             self.dispatcher._stop()
         self.atom.stop()
