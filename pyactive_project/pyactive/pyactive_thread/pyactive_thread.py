@@ -83,6 +83,7 @@ class Actor(Abstract_actor):
     def receive_result(self, timeout = None):
         '''receive result of synchronous calls'''
         result = self.channel.receive(timeout)
+        # print 'receive_result', result
         return result[RESULT]
 
 
@@ -110,6 +111,8 @@ class Actor(Abstract_actor):
                     target = msg2[SRC]
                     msg2[TYPE]= RESULT
                     msg2[RESULT]=result
+
+                    # print 'into receive', msg2[RESULT]
                     del msg2[PARAMS]
                     del msg2[SRC]
                     if pending.has_key(msg[RPC_ID]):
@@ -130,6 +133,7 @@ class Actor(Abstract_actor):
 
 
     def receive_sync(self, result, rpc_id):
+        print 'receive_sync', result
         msg = self.callbacks[rpc_id]
         del self.callbacks[rpc_id]
         msg2 = copy.copy(msg)

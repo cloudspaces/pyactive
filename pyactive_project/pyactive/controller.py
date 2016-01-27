@@ -18,7 +18,7 @@ def start_controller(controllerType):
     global controller
     controller = __import__(packageName+'.'+packageName, globals(), locals(), ['Actor', 'launch', 'new_dispatcher', 'ParallelWrapper', 'new_group'], -1)
     global timeController
-    timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval'], -1)
+    timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval', 'interval_host'], -1)
 
 def tracer(func,atom):
     """Tracer the call messages"""
@@ -36,7 +36,7 @@ def tracer2(func,atom):
 
 class Host(object):
     _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1' }
-    _async = ['shutdown', 'hello']
+    _async = ['shutdown', 'hello', 'attach_interval', 'detach_interval']
     _ref = ['spawn_id', 'lookup' ]
     _prallel = []
 
@@ -48,6 +48,7 @@ class Host(object):
         self.tasks = {}
         self.TRACE = False
         self.load_transport(transport)
+        self.interval = {}
         self.host = self
 
     def load_transport(self, transport):
@@ -112,7 +113,10 @@ class Host(object):
         client = self.load_client(a.channel, aref, aref)
         return client
 
-
+    def attach_interval(self, interval_id, interval_event):
+        self.interval[interval_id] = interval_event
+    def detach_interval(self, interval_id):
+        del self.interval[interval_id]
     def register(self, aref, obj):
         aurl = urlparse(aref)
         #change next if for method is_local, when we have the Dispatcher
@@ -287,6 +291,8 @@ def sleep(seconds):
 
 def interval(time, f, *args, **kwargs):
     return timeController.interval(time, f, *args, **kwargs)
+def interval_host(host, time, f, *args, **kwargs):
+    return timeController.interval_host(host, time, f, *args, **kwargs)
 def later(time, f, *args, **kwargs):
     timeController.later(time, f, *args, **kwargs)
 def send_timeout():

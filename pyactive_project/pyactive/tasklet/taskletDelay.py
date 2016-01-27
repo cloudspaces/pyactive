@@ -35,7 +35,7 @@ def later(time, f, *args, **kwargs):
         sleep(time)
 
         return f(*args, **kwargs)
-        
+
     stackless.tasklet(wrap)(*args, **kwargs)
 
 
@@ -47,4 +47,13 @@ def interval(time, f, *args, **kwargs):
             sleep(time)
             f(*args, **kwargs)
     t = stackless.tasklet(wrap)(*args, **kwargs)
-#    tasklet.tasklets[t] = 'atom://localhost/'+f.__module__+'/'+f.__name__ 
+
+def interval_host(host, time, f, *args, **kwargs):
+    """creates a tasklet that runs a function 'f' every time interval
+    """
+    def wrap(*args, **kwargs):
+        while True:
+            sleep(time)
+            f(*args, **kwargs)
+    t = stackless.tasklet(wrap)(*args, **kwargs)
+#    tasklet.tasklets[t] = 'atom://localhost/'+f.__module__+'/'+f.__name__

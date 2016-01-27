@@ -5,7 +5,7 @@ from constants import METHOD, SYNC, ONEWAY, PARAMS, MODE, FROM, RPC_ID, MULTI
 import controller
 from util import Ref
 from copy import copy
-import exception
+from exception import TimeoutError, PyactiveError
 import uuid
 
 
@@ -75,11 +75,10 @@ class Proxy(Ref):
            # time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
         self.my_later(methodname, rpc_id)
         result = self.client.receive_result()
-        # print 'result', result
         if self.lock:
 #             print 'acquire_proxy', self._from
             self.lock.acquire()
-        if isinstance(result, exception.PyactiveError):
+        if isinstance(result, PyactiveError):
             raise result
         else:
             return result
