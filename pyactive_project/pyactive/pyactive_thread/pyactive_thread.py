@@ -361,6 +361,7 @@ def launch(func, params=[]):
     threads[t1] = 'atom://localhost/'+func.__module__+'/'+func.__name__
     t1.start()
     t1.join()
+    controller.sleep(2)
     host =  controller.get_host()
     host._shutdown()
 

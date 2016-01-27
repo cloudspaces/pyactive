@@ -13,7 +13,7 @@ class Server:
         listenSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         listenSocket.bind((host, port))
         listenSocket.listen(10)
-        print "SERVER: Listening"
+        #print "SERVER: Listening"
         self.sockets = {}
         self.endpoints={}
         self.socket = listenSocket
@@ -25,12 +25,12 @@ class Server:
     def AcceptConnections(self, listenSocket):
         while True:
             self.AcceptEndpointConnections(listenSocket)
-        print 'break while'
+
 
     def AcceptEndpointConnections(self, listenSocket):
         clientSocket, clientAddress = listenSocket.accept()
-        print "SERVER: Accepted connection from", clientAddress
-        print "SERVER: Client socket", id(clientSocket._sock)
+        #print "SERVER: Accepted connection from", clientAddress
+        #print "SERVER: Client socket", id(clientSocket._sock)
         EndPoint(self, clientSocket)
 
     def send(self, msg):
@@ -52,7 +52,7 @@ class Server:
         conn.send(data)
 
     def close(self):
-        print "SERVER: Shutting down the server"
+        #print "SERVER: Shutting down the server"
         try:
             self.socket.shutdown(1)
         except:
@@ -61,6 +61,7 @@ class Server:
         for endpoint in self.endpoints.values():
             endpoint.Release()
         self.thread._Thread__stop()
+
 
 
 class EndPoint:
