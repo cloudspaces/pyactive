@@ -27,9 +27,8 @@ def interval(time, f, *args, **kwargs):
 
 def interval_host(host, time, f, *args, **kwargs):
     def wrap(*args, **kwargs):
-        print args
         thread = currentThread()
-        thread.get_ident()
+        thread.getName()
         args = list(args)
         stop_event = args[0]
         del args[0]
@@ -38,14 +37,13 @@ def interval_host(host, time, f, *args, **kwargs):
             stop_event.wait(time)
             f(*args, **kwargs)
         host.detach_interval(thread_id)
-    print host, time
     t2_stop = Event()
     args = list(args)
     args.insert(0, t2_stop)
     args = tuple(args)
     t = Thread(target=wrap, args=args, kwargs=kwargs)
     t.start()
-    thread_id = t.get_ident()
+    thread_id = t.getName()
     host.attach_interval(thread_id, t2_stop)
     return t2_stop
 

@@ -92,44 +92,46 @@ class Actor(Abstract_actor):
         invoke = getattr(self.obj, msg[METHOD])
         params = msg[PARAMS]
         result = None
-        try:
-            if msg[METHOD] in self.sync_parallel:
-                self.callbacks[msg[RPC_ID]] = msg
-                params = list(params)
-                params.insert(0, {'rpc_id':msg[RPC_ID], 'actor':self})
-                invoke(*params)
+        # try:
+        if msg[METHOD] in self.sync_parallel:
+            self.callbacks[msg[RPC_ID]] = msg
+            params = list(params)
+            params.insert(0, {'rpc_id':msg[RPC_ID], 'actor':self})
+            invoke(*params)
+        else:
+            if self.__lock != None:
+                self.__lock.acquire()
+                result = invoke(*params)
+                self.__lock.release()
+
             else:
-                if self.__lock != None:
-                    self.__lock.acquire()
-                    result = invoke(*params)
-                    self.__lock.release()
+                result = invoke(*params)
+            if msg[MODE] == SYNC:
+                msg2 = copy.copy(msg)
+                target = msg2[SRC]
+                msg2[TYPE]= RESULT
+                msg2[RESULT]=result
 
-                else:
-                    result = invoke(*params)
-                if msg[MODE] == SYNC:
-                    msg2 = copy.copy(msg)
-                    target = msg2[SRC]
-                    msg2[TYPE]= RESULT
-                    msg2[RESULT]=result
-
-                    # print 'into receive', msg2[RESULT]
-                    del msg2[PARAMS]
-                    del msg2[SRC]
-                    if pending.has_key(msg[RPC_ID]):
-                        del pending[msg[RPC_ID]]
-                        _from = msg2[FROM]
-                        msg2[FROM] = self.aref
-                        msg2[TO] = _from
-                        self.send2(target,msg2)
+                # print 'into receive', msg2[RESULT]
+                del msg2[PARAMS]
+                del msg2[SRC]
+                if pending.has_key(msg[RPC_ID]):
+                    del pending[msg[RPC_ID]]
+                    _from = msg2[FROM]
+                    msg2[FROM] = self.aref
+                    msg2[TO] = _from
+                    self.send2(target,msg2)
 
 #             else:
 #                 result = invoke(*params)
-        except PyactiveError,e:
-            result= e
-            msg[ERROR]=1
-        except TypeError, e2:
-            result = MethodError()
-            msg[ERROR]=1
+        # except PyactiveError,e:
+        #     print 'hola! mecagon la puta'
+        #     print e, PyactiveError
+        #     result= PyactiveError()
+        #     msg[ERROR]=1
+        # except TypeError, e2:
+        #     result = MethodError()
+        #     msg[ERROR]=1
 
 
     def receive_sync(self, result, rpc_id):

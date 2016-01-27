@@ -8,48 +8,48 @@ class Abstract_actor(Ref):
         self.aref = ''
         self.group = None
         self.running = False
-        
-    
+
+
     def registry_object(self, obj):
         self.obj = obj
-        
+
     def run(self):
         self.running = True
-        
+
     def stop(self):
-        raise NotImplementedError()   
-    
+        raise NotImplementedError()
+
     def send(self,msg):
-        raise NotImplementedError()   
-    
+        raise NotImplementedError()
+
     def init_parallel(self):
         raise NotImplementedError()
 
     def send2(self,target,msg):
         target.send(msg)
-        
+
     def receive_result(self):
         '''recive result of synchronous calls'''
         result = self.channel.result
         return result
-    
+
     def keep_alive(self):
         return True
-    
+
     def failure_detect(self, actor):
         self.obj.failure_detect(actor.get_id())
-        
-    def receive(self,msg):   
+
+    def receive(self,msg):
         raise NotImplementedError()
-    
+
     def ref_on(self):
         '''this method put wrapper to process ref'''
         self.receive = ref_l(self.receive)
         self.send2 = ref_d(self.send2)
-            
+
     def get_aref(self):
-        return self.aref    
-    
+        return self.aref
+
     def get_gref(self):
         if self.group != None:
             return self.group.aref
@@ -58,10 +58,7 @@ class Abstract_actor(Ref):
         self.aref = aref
         aurl = urlparse(aref)
         module, kclass, oid = aurl.path[1:].split('/')
-        self._id = oid 
-        
+        self._id = oid
+
     def get_proxy(self):
         raise NotImplementedError()
-    
-    
-    

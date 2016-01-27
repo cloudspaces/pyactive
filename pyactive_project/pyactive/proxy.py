@@ -78,7 +78,8 @@ class Proxy(Ref):
         if self.lock:
 #             print 'acquire_proxy', self._from
             self.lock.acquire()
-        if isinstance(result, PyactiveError):
+        if isinstance(result, Exception):
+            print 'it is an exception'
             raise result
         else:
             return result

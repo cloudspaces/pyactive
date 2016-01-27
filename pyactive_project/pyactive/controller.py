@@ -82,6 +82,7 @@ class Host(object):
         a.set_aref(aref)
         a.host = self
         obj.id = oid
+        obj._host = self
         obj._atom = a
         refList = obj.__class__._ref
 #        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
@@ -171,7 +172,8 @@ class Host(object):
         return proxy
 
     def _shutdown(self):
-
+        for interval_event in self.interval.values():
+            interval_event.set()
         for atom in self.objects.values():
             if atom.aref != self.aref:
                 atom.stop()
