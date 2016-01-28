@@ -45,7 +45,6 @@ class Proxy(Ref):
         self.syncList = copy(self.client.syncList)
         refAsync = set(client.asyncList) & set(client.refList)
         self.refSync = set(client.syncList) & set(client.refList)
-
         for name in self.refSync:
             setattr(self, name, _RefWraper(self.sync_remote_call, name))
             del self.client.syncList[name]

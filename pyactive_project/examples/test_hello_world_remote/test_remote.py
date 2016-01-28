@@ -39,11 +39,11 @@ class Test(unittest.TestCase):
 
     def test_throw_timeout(self):
         n2 = self.host.spawn_id('2', 'test_remote', 'Server', [])
-        try:
-            n2.throw_timeout()
-            self.assertTrue(False)
-        except(e.TimeoutError):
-            self.assertTrue(True)
+        # try:
+        n2.throw_timeout()
+        self.assertTrue(False)
+        # except(e.TimeoutError):
+        #     self.assertTrue(True)
 
     @classmethod
     def tearDownClass(cls):

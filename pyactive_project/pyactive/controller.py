@@ -102,8 +102,9 @@ class Host(object):
         a.sync_parallel = set(syncList)&set(parallelList)
         a.async_parallel = set(asyncList)&set(parallelList)
 #        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
-        lock = a.init_parallel()
-        self.locks[aref] = lock
+        if parallelList:
+            lock = a.init_parallel()
+            self.locks[aref] = lock
         #Finally run object because it's ready now
         a.run()
 

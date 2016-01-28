@@ -12,7 +12,7 @@ class Server(object):
         self.conn = stomp.Connection(host_and_ports=[(host, port)])
         self.conn.start()
         self.conn.connect(wait=True)
-        
+
 
     def subs(self, listener, topic, headers={}):
         self.conn.set_listener('', listener)
@@ -20,9 +20,9 @@ class Server(object):
 
     def pub(self,msg, topic, headers={}):
         self.conn.send(msg, destination=topic,headers=headers)
-        
+
     def close(self):
-        self.conn.stop()
+        # self.conn.stop()
         try:
             self.conn.disconnect()
         except Exception:
