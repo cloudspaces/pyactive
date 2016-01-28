@@ -79,7 +79,6 @@ class Proxy(Ref):
 #             print 'acquire_proxy', self._from
             self.lock.acquire()
         if isinstance(result, Exception):
-            print 'it is an exception'
             raise result
         else:
             return result
