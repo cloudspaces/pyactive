@@ -7,6 +7,7 @@ import time as timep
 def later(timeout,f,*args, **kwargs):
     t = Timer(timeout, f, args)
     t.start()
+    return t
 
 def interval(time, f, *args, **kwargs):
     def wrap(*args, **kwargs):

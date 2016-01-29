@@ -30,7 +30,6 @@ def test3():
 
     test = host.spawn_id('1','launch','Test',[])
     test.hello_world()
-    host.shutdown()
 
 if __name__ == "__main__":
     start_controller('pyactive_thread')

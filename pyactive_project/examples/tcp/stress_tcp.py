@@ -15,13 +15,10 @@ def test3():
 
     init = time()
     for i in range (10000):
-        z = ref.add(6,7)
+        ref.substract(6,7)
     end = time()
 
     print end - init
-
-    #sleep(3)
-    host.shutdown()
 
 
 def main():

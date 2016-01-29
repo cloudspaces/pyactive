@@ -72,8 +72,9 @@ class Proxy(Ref):
             # print 'release_proxy', self._from, self.lock
             self.lock.release()
            # time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
-        self.my_later(methodname, rpc_id)
+        t_timer = self.my_later(methodname, rpc_id)
         result = self.client.receive_result()
+        t_timer.cancel()
         if self.lock:
 #             print 'acquire_proxy', self._from
             self.lock.acquire()
@@ -91,7 +92,7 @@ class Proxy(Ref):
         self.client.send(msg)
 
     def my_later(self, methodname, rpc_id):
-        time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
+        return time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
 
     def get_aref(self):
         return self.client.get_aref()

@@ -6,11 +6,11 @@ from pyactive.controller import launch,init_host, start_controller
 def test_remote_spawn():
     tcpconf = ('tcp',('127.0.0.1',1240))
     host = init_host(tcpconf)
-    remote_aref = 'tcp://127.0.0.1:1232/atom/Host/0'
+    remote_aref = 'tcp://127.0.0.1:1232/controller/Host/0'
     remote_host = host.lookup(remote_aref)
     remote_host.hello()
     print remote_host
-    server = remote_host.spawn('s1','Server',[])
+    server = remote_host.spawn_id('0', 's1','Server',[])
     z = server.add(6,7)
     print z
     server.substract(6,5)

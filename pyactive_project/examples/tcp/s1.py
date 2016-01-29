@@ -8,12 +8,16 @@ class Server():
     _ref = []
     _parallel = []
 
+    def __init__(self):
+        self.cont = 0
+
     def add(self,x,y):
         return x+y
 
     def substract(self,x,y):
+        self.cont += 1
         print 'subtract',x-y
-
+        print self.cont
     def wait_a_lot(self):
         sleep(2)
         return 'ok'
@@ -26,8 +30,6 @@ def test3():
     server = host.spawn_id('0','s1','Server',[])
     server.substract(4,3)
     print server.add(66,7)
-
-
 
 
 def main():

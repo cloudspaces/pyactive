@@ -7,7 +7,7 @@ from pyactive.controller import init_host, launch, start_controller,sleep
 
 from time import time
 NUM_NODES = 100
-NUM_MSGS = 10000
+NUM_MSGS = 100000
 
 class Node():
     _sync = {'is_finished': '1', 'get_cnt': '1'}
@@ -44,8 +44,8 @@ class Node():
         #print 'taken token',self.cnt
 
 def testN():
-
-    host = init_host()
+    net_conf = ('tcp',('127.0.0.1',6664))
+    host = init_host(net_conf)
 
     print 'TEST ',NUM_NODES,' nodes and', NUM_MSGS, "messages."
 
