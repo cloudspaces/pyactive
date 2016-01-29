@@ -24,7 +24,6 @@ class Channel(Queue):
     def __init__(self):
         Queue.__init__(self)
     def send(self,msg):
-        print 'send_channel', msg
         self.put(msg)
     def receive(self, timeout = None):
         return self.get(timeout=timeout)
@@ -60,7 +59,7 @@ class Actor(Abstract_actor):
         self.channel.send(StopIteration)
 
     def send(self,msg):
-        print self.aref, 'actor send', msg
+        # print self.aref, 'actor send', msg
         msg[TO] = self.aref
         msg[TYPE] = CALL
         msg[TARGET] = self.target
@@ -85,7 +84,7 @@ class Actor(Abstract_actor):
     def receive_result(self, timeout = None):
         '''receive result of synchronous calls'''
         result = self.channel.receive(timeout)
-        print 'receive_result'
+        # print 'receive_result'
         return result[RESULT]
 
 
@@ -93,6 +92,7 @@ class Actor(Abstract_actor):
         ''' receive messages and invokes object method'''
         invoke = getattr(self.obj, msg[METHOD])
         params = msg[PARAMS]
+
         result = None
         # try:
         if msg[METHOD] in self.sync_parallel:
@@ -108,21 +108,24 @@ class Actor(Abstract_actor):
                     self.__lock.release()
 
                 else:
-                    print 'into receive'
+                    # print 'into receive'
                     result = invoke(*params)
-                    print 'into_receive 2', result
+                    # print 'into_receive 2', result
             except PyactiveError,e:
-                print self._id, 'pyactvie error', msg
+                # print self._id, 'pyactvie error', msg
                 result = e
                 msg[ERROR]=1
-                print self._id, 'hola que tal', result
+                # print self._id, 'hola que tal', result
 
             except TypeError, e2:
                 result = MethodError()
                 msg[ERROR]=1
 
+            if msg[MODE] == ONEWAY and ERROR in msg.keys():
+                raise result
+
             if msg[MODE] == SYNC:
-                print self.aref,'sync method', result
+                # print self.aref,'sync method', result
                 msg2 = copy.copy(msg)
                 target = msg2[SRC]
                 msg2[TYPE]= RESULT
