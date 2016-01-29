@@ -111,21 +111,20 @@ class Actor(Abstract_actor):
                     # print 'into receive'
                     result = invoke(*params)
                     # print 'into_receive 2', result
-            except PyactiveError,e:
-                # print self._id, 'pyactvie error', msg
-                result = e
-                msg[ERROR]=1
+
                 # print self._id, 'hola que tal', result
 
             except TypeError, e2:
                 result = MethodError()
                 msg[ERROR]=1
 
+            except Exception, e:
+                result = e
+                msg[ERROR]=1
             if msg[MODE] == ONEWAY and ERROR in msg.keys():
                 raise result
 
             if msg[MODE] == SYNC:
-                # print self.aref,'sync method', result
                 msg2 = copy.copy(msg)
                 target = msg2[SRC]
                 msg2[TYPE]= RESULT
@@ -210,10 +209,11 @@ class ParallelSyncWraper():
         try:
             result = func(*args)
 
-        except PyactiveError,e:
-            result= e
+
         except TypeError, e2:
             result = MethodError()
+        except Exception,e:
+            result= e
         lock.release()
 
         self.__principal_thread.receive_sync(result, rpc_id)
@@ -251,12 +251,10 @@ class TCPDispatcher(Actor):
 
     def receive(self,msg):
         if msg[MODE]==SYNC and msg[TYPE]==CALL:
-            print 'receive dispatcher', msg
             self.callback[msg[RPC_ID]]= msg[SRC]
 
         msg[SRC] = self.addr
         try:
-            print 'self.con.send dispatcher', msg
             self.conn.send(msg)
         except Exception,e:
             print e,'TCP ERROR 2'
