@@ -6,7 +6,7 @@ from urlparse import urlparse
 from proxy import Proxy, select_time, Auto_Proxy
 from util import Ref, AtomRef
 from copy import copy
-from exception import NotFoundDispatcher
+from exception import NotFoundDispatcher, DuplicatedActor
 import sys, types
 
 def get_host():
@@ -109,7 +109,15 @@ class Host(object):
         a.run()
 
         #Now registry new object in Host, because need check duplicates
+<<<<<<< Updated upstream
         self.register(aref, a)
+=======
+        try:
+            self.register(aref, a)
+        except Exception, e:
+            a.stop()
+            raise e
+>>>>>>> Stashed changes
 
         obj.proxy = Auto_Proxy(obj, aref)
         client = self.load_client(a.channel, aref, aref)
@@ -124,7 +132,11 @@ class Host(object):
         #change next if for method is_local, when we have the Dispatcher
         if self.is_local(aurl.netloc):
             if self.objects.has_key(aurl.path):
+<<<<<<< Updated upstream
                 raise Exception('duplicated')
+=======
+                raise DuplicatedActor()
+>>>>>>> Stashed changes
             else:
                 self.objects[aurl.path] = obj
         else:

@@ -24,6 +24,7 @@ class Channel(Queue):
     def __init__(self):
         Queue.__init__(self)
     def send(self,msg):
+        print 'send_channel', msg
         self.put(msg)
     def receive(self, timeout = None):
         return self.get(timeout=timeout)
@@ -59,6 +60,7 @@ class Actor(Abstract_actor):
         self.channel.send(StopIteration)
 
     def send(self,msg):
+        print self.aref, 'actor send', msg
         msg[TO] = self.aref
         msg[TYPE] = CALL
         msg[TARGET] = self.target
@@ -83,6 +85,7 @@ class Actor(Abstract_actor):
     def receive_result(self, timeout = None):
         '''receive result of synchronous calls'''
         result = self.channel.receive(timeout)
+        print 'receive_result'
         return result[RESULT]
 
 
@@ -98,14 +101,28 @@ class Actor(Abstract_actor):
             params.insert(0, {'rpc_id':msg[RPC_ID], 'actor':self})
             invoke(*params)
         else:
-            if self.__lock != None:
-                self.__lock.acquire()
-                result = invoke(*params)
-                self.__lock.release()
+            try:
+                if self.__lock != None:
+                    self.__lock.acquire()
+                    result = invoke(*params)
+                    self.__lock.release()
 
-            else:
-                result = invoke(*params)
+                else:
+                    print 'into receive'
+                    result = invoke(*params)
+                    print 'into_receive 2', result
+            except PyactiveError,e:
+                print self._id, 'pyactvie error', msg
+                result = e
+                msg[ERROR]=1
+                print self._id, 'hola que tal', result
+
+            except TypeError, e2:
+                result = MethodError()
+                msg[ERROR]=1
+
             if msg[MODE] == SYNC:
+                print self.aref,'sync method', result
                 msg2 = copy.copy(msg)
                 target = msg2[SRC]
                 msg2[TYPE]= RESULT
@@ -144,7 +161,7 @@ class Actor(Abstract_actor):
             _from = msg2[FROM]
             msg2[FROM] = self.aref
             msg2[TO] = _from
-            self.send2(target,msg2)
+            self.send2(target, msg2)
     def get_proxy(self):
         return self.host.load_client(self.channel, self.aref, get_current())
 
@@ -187,8 +204,13 @@ class ParallelSyncWraper():
 
     def invoke(self, func, rpc_id, lock, args=[], kwargs=[]):
         lock.acquire()
+        try:
+            result = func(*args)
 
-        result = func(*args)
+        except PyactiveError,e:
+            result= e
+        except TypeError, e2:
+            result = MethodError()
         lock.release()
 
         self.__principal_thread.receive_sync(result, rpc_id)
@@ -226,10 +248,12 @@ class TCPDispatcher(Actor):
 
     def receive(self,msg):
         if msg[MODE]==SYNC and msg[TYPE]==CALL:
+            print 'receive dispatcher', msg
             self.callback[msg[RPC_ID]]= msg[SRC]
 
         msg[SRC] = self.addr
         try:
+            print 'self.con.send dispatcher', msg
             self.conn.send(msg)
         except Exception,e:
             print e,'TCP ERROR 2'

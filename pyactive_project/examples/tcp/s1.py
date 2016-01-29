@@ -2,6 +2,7 @@
 Author: Pedro Garcia Lopez <pedro.garcia@urv.cat>
 """
 from pyactive.controller import init_host, serve_forever, start_controller, sleep
+from pyactive.exception import DuplicatedActor
 class Server():
     _sync = {'add': '1', 'wait_a_lot': '1'}
     _async = ['substract']
@@ -12,7 +13,7 @@ class Server():
         self.cont = 0
 
     def add(self,x,y):
-        return x+y
+        raise DuplicatedActor()
 
     def substract(self,x,y):
         self.cont += 1
@@ -28,8 +29,6 @@ def test3():
     host = init_host(tcpconf)
 
     server = host.spawn_id('0','s1','Server',[])
-    server.substract(4,3)
-    print server.add(66,7)
 
 
 def main():
