@@ -109,7 +109,11 @@ class Host(object):
         a.run()
 
         #Now registry new object in Host, because need check duplicates
-        self.register(aref, a)
+        try:
+            self.register(aref, a)
+        except Exception, e:
+            a.stop()
+            return e
 
         obj.proxy = Auto_Proxy(obj, aref)
         client = self.load_client(a.channel, aref, aref)
@@ -124,7 +128,7 @@ class Host(object):
         #change next if for method is_local, when we have the Dispatcher
         if self.is_local(aurl.netloc):
             if self.objects.has_key(aurl.path):
-                raise Exception('duplicated')
+                raise Exception('Duplicated: Already exists an Actor with the same ID')
             else:
                 self.objects[aurl.path] = obj
         else:
