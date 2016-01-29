@@ -116,6 +116,7 @@ class Host(object):
             a.stop()
             raise e
 
+
         obj.proxy = Auto_Proxy(obj, aref)
         client = self.load_client(a.channel, aref, aref)
         return client
