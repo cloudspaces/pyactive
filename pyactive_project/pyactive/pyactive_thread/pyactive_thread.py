@@ -115,7 +115,7 @@ class Actor(Abstract_actor):
                 # print self._id, 'hola que tal', result
 
             except TypeError, e2:
-                result = MethodError(msg[METHOD])
+                result = MethodError(msg[METHOD], e2)
                 msg[ERROR]=1
 
             except Exception, e:
