@@ -6,7 +6,7 @@ from urlparse import urlparse
 from proxy import Proxy, select_time, Auto_Proxy
 from util import Ref, AtomRef
 from copy import copy
-from exception import NotFoundDispatcher, DuplicatedActor
+from exception import NotFoundDispatcher, DuplicatedActor, SyncMethodError
 import sys, types
 
 def get_host():
@@ -82,7 +82,7 @@ class Host(object):
         a.set_aref(aref)
         a.host = self
         obj.id = oid
-        obj._host = self
+        obj._host = self.atom.get_proxy()
         obj._atom = a
         refList = obj.__class__._ref
 #        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
@@ -97,6 +97,8 @@ class Host(object):
             a.receive = tracer(a.receive, self.tracer)
 
         parallelList = obj.__class__._parallel
+        if not isinstance(obj.__class__._sync, dict):
+            raise SyncMethodError(module+"."+kclass)
         syncList = obj.__class__._sync.keys()
         asyncList = obj.__class__._async
         a.sync_parallel = set(syncList)&set(parallelList)
@@ -105,6 +107,7 @@ class Host(object):
         if parallelList:
             lock = a.init_parallel()
             self.locks[aref] = lock
+
         #Finally run object because it's ready now
         a.run()
 
@@ -164,6 +167,7 @@ class Host(object):
         client.asyncList = copy(kclass_._async)
         client.refList = copy(kclass_._ref)
         client.syncList = copy(kclass_._sync)
+
 #        client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
 #        client.refList = list(methodsWithDecorator(kclass_, 'ref'))
 #        client.syncList = methodsWithSync(kclass_, 'sync')
@@ -179,8 +183,6 @@ class Host(object):
         return proxy
 
     def _shutdown(self):
-        for interval_event in self.interval.values():
-            interval_event.set()
         for atom in self.objects.values():
             if atom.aref != self.aref:
                 atom.stop()
@@ -189,9 +191,10 @@ class Host(object):
         # self.objects[aurl.path] = self.atom
         if self.dispatcher != self:
             self.dispatcher._stop()
+        for interval_event in self.interval.values():
+            interval_event.set()
         self.atom.stop()
 
-    #@async
     def shutdown(self):
         self._shutdown()
 

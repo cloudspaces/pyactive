@@ -16,8 +16,8 @@ def interval(time, f, *args, **kwargs):
         del args[0]
         args = tuple(args)
         while not stop_event.is_set():
-            stop_event.wait(time)
             f(*args, **kwargs)
+            stop_event.wait(time)
     t2_stop = Event()
     args = list(args)
     args.insert(0, t2_stop)
@@ -35,8 +35,8 @@ def interval_host(host, time, f, *args, **kwargs):
         del args[0]
         args = tuple(args)
         while not stop_event.is_set():
-            stop_event.wait(time)
             f(*args, **kwargs)
+            stop_event.wait(time)
         host.detach_interval(thread_id)
     t2_stop = Event()
     args = list(args)

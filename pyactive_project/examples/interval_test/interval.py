@@ -13,8 +13,8 @@ class Registry():
         self.names = {}
 
     def init_start(self):
-        self.interval1 = interval_host(self._atom.host, 5, self.hello)
-        # later(30, self.stop_interval)
+        self.interval1 = interval_host(self._host, 1, self.hello)
+        later(10, self.stop_interval)
 
     def stop_interval(self):
         self.interval1.set()

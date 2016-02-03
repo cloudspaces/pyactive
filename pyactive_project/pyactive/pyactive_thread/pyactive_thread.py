@@ -115,7 +115,7 @@ class Actor(Abstract_actor):
                 # print self._id, 'hola que tal', result
 
             except TypeError, e2:
-                result = MethodError()
+                result = MethodError(msg[METHOD])
                 msg[ERROR]=1
 
             except Exception, e:
@@ -166,7 +166,6 @@ class Actor(Abstract_actor):
             self.send2(target, msg2)
     def get_proxy(self):
         return self.host.load_client(self.channel, self.aref, get_current())
-
 class MultiActor(Actor):
     def receive_result(self, timeout=None):
         '''receive result of synchronous calls'''
