@@ -17,7 +17,7 @@ Pyactive Fast tutorial
     actor2.py, actor2_client.py
 
 3. Simple Echo Actor with synchronous methods
-    actor3.py
+    actor3.py, actor3b,py, actor3c.py
 
 4. Communication between actors. Passing references in the constructor
     actor4.py
