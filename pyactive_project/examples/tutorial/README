@@ -1,0 +1,44 @@
+"""
+Author: Pedro Garcia Lopez <pedro.garcia@urv.cat>
+"""
+
+Pyactive Fast tutorial
+---------------------------------------
+
+
+
+0. Client/Server communication using XMLRPC
+    rpcs.py, rpc.py
+
+1. Simple Echo Actor with asynchronous methods
+    actor1.py
+
+2. Remote communication using TCP transport.
+    actor2.py, actor2_client.py
+
+3. Simple Echo Actor with synchronous methods
+    actor3.py
+
+4. Communication between actors. Passing references in the constructor
+    actor4.py
+
+5. Communication between actors. Passing references in methods
+    actor5.py
+
+6. Non-blocking synchronous call with parallel methods (Advanced)
+    actor6.py
+
+7. Blocking synchronous call without parallel method (Advanced)
+    actor7.py
+
+8. Timeouts in synchronous calls with parallel (Advanced)
+    actor8.py, actor9.py
+
+9. Intervals and periodic events
+    actor10.py. actor11.py
+
+10. Spawning actors in a remote host
+    actor12.py. remote_host.py
+
+11. Remote Naming service
+    registry.py, actor13.py,actor14.py
