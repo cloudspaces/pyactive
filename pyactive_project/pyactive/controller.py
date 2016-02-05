@@ -6,7 +6,7 @@ from urlparse import urlparse
 from proxy import Proxy, select_time, Auto_Proxy
 from util import Ref, AtomRef
 from copy import copy
-from exception import NotFoundDispatcher, DuplicatedActor, SyncMethodError
+from exception import NotFoundDispatcher, DuplicatedActor, SyncMethodError, ActorNotFound
 import sys, types
 
 def get_host():
@@ -82,7 +82,7 @@ class Host(object):
         a.set_aref(aref)
         a.host = self
         obj.id = oid
-        obj._host = self.atom.get_proxy()
+        obj.host = self.atom.get_proxy()
         obj._atom = a
         refList = obj.__class__._ref
 #        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
@@ -209,27 +209,31 @@ class Host(object):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
             if not self.objects.has_key(aurl.path):
-                raise Exception('not found')
+                raise ActorNotFound(aref)
             else:
                 obj = self.objects[aurl.path]
                 client = self.load_client(obj.channel, aref, _from)
                 return client
-        else:
+        elif not self.dispatcher.aref == self.aref:
             client = self.load_client(self.dispatcher.channel, aref, _from)
             return client
+        else:
+            raise ActorNotFound(aref)
 
     def lookup(self, aref):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
             if not self.objects.has_key(aurl.path):
-                raise Exception('not found')
+                raise ActorNotFound(aref)
             else:
                 obj = self.objects[aurl.path]
                 client = self.load_client(obj.channel, aref, controller.get_current())
                 return client
-        else:
+        elif not self.dispatcher.aref == self.aref:
             client = self.load_client(self.dispatcher.channel, aref, controller.get_current())
             return client
+        else:
+            raise ActorNotFound(aref)
 
     def _dumps(self, param):
         if isinstance(param, Ref):

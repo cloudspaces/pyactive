@@ -48,8 +48,18 @@ variable must be a dictionary"
 
 
 class NotImplementedMethod(PyactiveError):
+
     def __str__(self):
         return 'Please implement this method'
+
+class ActorNotFound(PyactiveError):
+    def __init__(self, actor_reference=None, e=None):
+        super(self.__class__, self).__init__(e)
+        self.actor_reference = actor_reference
+    def __str__(self):
+        if self.actor_reference:
+            return 'NOT FOUND: Any actor with the reference: %s' % self.actor_reference
+        return 'NOT FOUND: Any actor with this reference'
 
 class DuplicatedActor(PyactiveError):
     def __str__(self):
