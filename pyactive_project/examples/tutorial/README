@@ -11,7 +11,7 @@ Pyactive Fast tutorial
     rpcs.py, rpc.py
 
 1. Simple Echo Actor with asynchronous methods
-    actor1.py
+    actor1.py, actor1b.py
 
 2. Remote communication using TCP transport.
     actor2.py, actor2_client.py
