@@ -23,7 +23,7 @@ Pyactive Fast tutorial
     actor4.py
 
 5. Communication between actors. Passing references in methods
-    actor5.py
+    actor5.py, actor5b.py
 
 6. Non-blocking synchronous call with parallel methods (Advanced)
     actor6.py
