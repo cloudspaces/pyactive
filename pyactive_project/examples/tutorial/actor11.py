@@ -35,12 +35,12 @@ class Workload(object):
 
 
     def start_interval(self):
-        self.interval1 = interval_host(self._host, 2, self.launch)
+        self.interval1 = interval_host(self.host, 2, self.launch)
         later(15, self.stop_interval)
 
     def stop_interval(self):
         self.interval1.set()
-        self._host.shutdown()
+        self.host.shutdown()
 
     def remote_server(self, web_server):
         self.server = web_server
