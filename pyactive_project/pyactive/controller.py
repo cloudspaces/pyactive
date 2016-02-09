@@ -38,7 +38,7 @@ class Host(object):
     _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1' }
     _async = ['shutdown', 'hello', 'attach_interval', 'detach_interval']
     _ref = ['spawn_id', 'lookup' ]
-    _prallel = []
+    _parallel = []
 
     def __init__(self, transport=()):
         self.name = 'local'
