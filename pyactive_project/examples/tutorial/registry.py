@@ -5,6 +5,7 @@ Author: Pedro Garcia Lopez <pedro.garcia@urv.cat>
 from pyactive.controller import init_host, launch,start_controller, sleep, serve_forever
 
 class NotFound(Exception):pass
+class AlreadyExists(Exception):pass
 
 class Registry:
     _sync = {'get_all':1,'bind':1,'lookup':1,'bind':1,'unbind':1}
@@ -17,7 +18,10 @@ class Registry:
         self.actors = {}
 
     def bind(self,name,actor):
-        self.actors[name] = actor
+        if self.actors.has_key(name):
+            raise AlreadyExists()
+        else:
+            self.actors[name] = actor
 
 
     def unbind(self,name):
