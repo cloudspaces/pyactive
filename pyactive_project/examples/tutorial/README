@@ -42,3 +42,7 @@ Pyactive Fast tutorial
 
 11. Remote Naming service
     registry.py, actor13.py,actor14.py
+
+12. Create your own botnet
+    registry.py, actor13.py, actor15.py
+
