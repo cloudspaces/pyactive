@@ -27,8 +27,10 @@ def test3():
     tcpconf = ('tcp',('127.0.0.1',1234))
     host = init_host(tcpconf)
 
-    server = host.spawn_id('0','s1','Server',[])
+    server = host.spawn_id('1','s1','Server',[])
     server.substract(4,3)
+    server2 = host.lookup("0")
+    server2.hello()
     print server.add(66,7)
 
 

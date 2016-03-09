@@ -349,9 +349,9 @@ def new_TCPdispatcher(host, dir):
 def new_dispatcher(host, transport):
     dispatcher_type = transport[0]
     if dispatcher_type == TCP:
-        return new_TCPdispatcher(host, transport[1])
+        return 'tcp', new_TCPdispatcher(host, transport[1])
     if dispatcher_type == MOM:
-        return new_MOMdispatcher(host, transport[1])
+        return 'mom', new_MOMdispatcher(host, transport[1])
     else:
         raise NotFoundDispatcher()
 
@@ -360,7 +360,7 @@ def get_current():
     if threads.has_key(current):
         return threads[current]
 
-def send_timeout(channel,rpc_id):
+def send_timeout(channel, rpc_id):
     if pending.has_key(rpc_id):
         del pending[rpc_id]
         msg = {}

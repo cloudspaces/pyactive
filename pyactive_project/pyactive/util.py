@@ -7,9 +7,9 @@ import inspect
 
 class Ref(object):
     pass
-    
+
 def ref_l(f):
-    def wrap_ref_l(*args):         
+    def wrap_ref_l(*args):
         args[0][PARAMS] = controller.get_host()._loads(args[0][PARAMS])
         return f(*args)
     return wrap_ref_l
@@ -24,8 +24,6 @@ class AtomRef(Ref):
     def __init__(self, aref, gref=None):
         self.ref = aref
         self.group = gref
-    
+
     def get_aref(self):
         return self.ref
-    
-

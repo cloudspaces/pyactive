@@ -35,9 +35,9 @@ def tracer2(func,atom):
     return on_call
 
 class Host(object):
-    _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1' }
+    _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1', 'lookup_remote_host':'1'}
     _async = ['shutdown', 'hello', 'attach_interval', 'detach_interval']
-    _ref = ['spawn_id', 'lookup' ]
+    _ref = ['spawn_id', 'lookup', 'lookup_remote_host' ]
     _parallel = []
 
     def __init__(self, transport=()):
@@ -54,10 +54,12 @@ class Host(object):
     def load_transport(self, transport):
         if transport != ():
                 try:
-                    self.dispatcher = controller.new_dispatcher(self, transport)
+                    self.protocol, self.dispatcher = controller.new_dispatcher(self, transport)
                 except NotFoundDispatcher:
                     raise NotFoundDispatcher()
-        self.aref = 'atom://' + self.dispatcher.name + '/controller/Host/0'
+        else:
+            self.protocol = 'atom'
+        self.aref = self.protocol+'://' + self.dispatcher.name + '/controller/Host/0'
         self.name = self.dispatcher.name
 
 
@@ -71,7 +73,7 @@ class Host(object):
 #         add_method = types.MethodType(keep_alive, obj, kclass)
 #         obj = add_method
         #aref object
-        aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
+        aref = self.protocol+'://' + self.name + '/' + module + '/' + kclass + '/' + oid
         #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
         a = controller.Actor()
 
@@ -114,7 +116,11 @@ class Host(object):
         #Now registry new object in Host, because need check duplicates
 
         try:
-            self.register(aref, a)
+            aurl = urlparse(aref)
+            if self.is_local(aurl.netloc):
+                self.register(oid, a)
+            else:
+                raise Exception('registering remote host atoms not allowed')
         except Exception, e:
             a.stop()
             raise e
@@ -126,18 +132,15 @@ class Host(object):
 
     def attach_interval(self, interval_id, interval_event):
         self.interval[interval_id] = interval_event
+
     def detach_interval(self, interval_id):
         del self.interval[interval_id]
-    def register(self, aref, obj):
-        aurl = urlparse(aref)
-        #change next if for method is_local, when we have the Dispatcher
-        if self.is_local(aurl.netloc):
-            if self.objects.has_key(aurl.path):
-                raise DuplicatedActor()
-            else:
-                self.objects[aurl.path] = obj
+
+    def register(self, oid, obj):
+        if self.objects.has_key(oid):
+            raise DuplicatedActor()
         else:
-            raise Exception('registering remote host atoms not allowed')
+            self.objects[oid] = obj
 
     def set_tracer(self, proxy):
         self.TRACE = True
@@ -153,7 +156,7 @@ class Host(object):
 
     def load_client(self, channel, aref, _from):
 
-        scheme, host, module, kclass, oid, = self.parse_aref(aref)
+        scheme, host, module, kclass, oid = self.parse_aref(aref)
 
         if module != 'controller':
             module_ = self.my_import(module)
@@ -205,22 +208,41 @@ class Host(object):
         return (aurl.scheme, aurl.netloc, module, kclass, oid)
 
 
-    def _lookup(self, aref, _from):
+    def _lookup(self, actor_id, _from):
+        if not self.objects.has_key(actor_id):
+            raise ActorNotFound(actor_id)
+
+        obj = self.objects[actor_id]
+        aref = obj.get_aref()
         aurl = urlparse(aref)
+
         if self.dispatcher.is_local(aurl.netloc):
-            if not self.objects.has_key(aurl.path):
-                raise ActorNotFound(aref)
-            else:
-                obj = self.objects[aurl.path]
-                client = self.load_client(obj.channel, aref, _from)
-                return client
+            client = self.load_client(obj.channel, aref, _from)
+            return client
         elif not self.dispatcher.aref == self.aref:
             client = self.load_client(self.dispatcher.channel, aref, _from)
             return client
         else:
-            raise ActorNotFound(aref)
+            raise ActorNotFound(actor_id)
 
-    def lookup(self, aref):
+    def lookup(self, actor_id):
+        if not self.objects.has_key(actor_id):
+            raise ActorNotFound(actor_id)
+
+        obj = self.objects[actor_id]
+        aref = obj.get_aref()
+        aurl = urlparse(aref)
+
+        if self.dispatcher.is_local(aurl.netloc):
+            client = self.load_client(obj.channel, aref, controller.get_current())
+            return client
+        elif not self.dispatcher.aref == self.aref:
+            client = self.load_client(self.dispatcher.channel, aref, controller.get_current())
+            return client
+        else:
+            raise ActorNotFound(actor_id)
+
+    def lookup_remote_host(self, aref):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
             if not self.objects.has_key(aurl.path):
@@ -245,15 +267,20 @@ class Host(object):
 
 
     def _loads(self, param):
+        #loads not allow ref in dict values for instance, only list
         if isinstance(param, AtomRef):
             _from = controller.get_current()
+
             if _from == param.get_aref():
-                aurl = urlparse(_from)
-                obj = Auto_Proxy(self.objects[aurl.path].obj, _from)
+                _, _, _, _, oid = self.parse_aref(_from)
+                obj = Auto_Proxy(self.objects[oid].obj, _from)
             else:
-                obj = self._lookup(param.get_aref(), _from)
+                _, _, _, _, oid = self.parse_aref(param.get_aref())
+                print 'oid', oid
+                obj = self._lookup(oid, _from)
 
             return obj
+
         elif isinstance(param, list):
             return [self._loads(elem) for elem in param]
         else:
@@ -273,7 +300,7 @@ def init_host(transport=()):
     a.set_aref(h.aref)
     a.host = h
     a.registry_object(h)
-    h.register(h.aref, a)
+    h.register("0", a)
     a.ref_on()
     a.run()
     h.channel = a.channel
