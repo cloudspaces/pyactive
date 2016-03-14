@@ -5,7 +5,7 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 from pyactive.constants import *
 from pyactive.exception import PyactiveError, TimeoutError, MethodError, NotFoundDispatcher
 from tcp_server import Server
-# from mom_server import Server as Session
+from mom_server import Server as Session
 from threading import Thread, Event, RLock,current_thread, Lock, BoundedSemaphore
 from Queue import Queue
 from pyactive.abstract_actor import Abstract_actor
