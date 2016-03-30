@@ -279,8 +279,8 @@ class TCPDispatcher(Actor):
                     msg[SRC]= self.channel
                     pending[msg[RPC_ID]] = 1
                 aref = msg[TO]
-                aurl = urlparse(aref)
-                self.host.objects[aurl.path].channel.send(msg)
+                _, _, _, _, oid = self.host.parse_aref(aref)
+                self.host.objects[oid].channel.send(msg)
         except Exception,e:
             print e,'TCP ERROR 1'
 
@@ -331,8 +331,8 @@ class MOMDispatcher(Actor):
                     msg[TARGET]=headers[SRC]
                     pending[msg[RPC_ID]] = 1
                 aref = msg[TO]
-                aurl = urlparse(aref)
-                self.host.objects[aurl.path].channel.send(msg)
+                _, _, _, _, oid = self.host.parse_aref(aref)
+                self.host.objects[oid].channel.send(msg)
         except Exception,e:
             pass
 

@@ -56,7 +56,6 @@ class Proxy(Ref):
         for name in self.client.syncList.keys():
             setattr(self, name, _RemoteMethod(self.sync_remote_call, name))
 
-
     def sync_remote_call(self, methodname, vargs, kwargs):
 #         print 'SOC AL PROXY', self._from, self.client._id
 #         print 'SOC DINS EL SYNC CALL semafor meu', self.lock

@@ -26,14 +26,13 @@ class Server():
 def test3():
     tcpconf = ('tcp',('127.0.0.1',1234))
     host = init_host(tcpconf)
-
+    print 'host_test3', host
     server = host.spawn_id('1','s1','Server',[])
     server.substract(4,3)
     server2 = host.lookup("0")
     server2.hello()
     print server.add(66,7)
-
-
+    
 def main():
     start_controller('pyactive_thread')
     serve_forever(test3)

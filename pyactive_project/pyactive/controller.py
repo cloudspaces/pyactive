@@ -59,7 +59,7 @@ class Host(object):
                     raise NotFoundDispatcher()
         else:
             self.protocol = 'atom'
-        self.aref = self.protocol+'://' + self.dispatcher.name + '/controller/Host/0'
+        self.aref = 'atom://' + self.dispatcher.name + '/controller/Host/0'
         self.name = self.dispatcher.name
 
 
@@ -73,7 +73,7 @@ class Host(object):
 #         add_method = types.MethodType(keep_alive, obj, kclass)
 #         obj = add_method
         #aref object
-        aref = self.protocol+'://' + self.name + '/' + module + '/' + kclass + '/' + oid
+        aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
         #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
         a = controller.Actor()
 
@@ -155,8 +155,7 @@ class Host(object):
         return location == self.name
 
     def load_client(self, channel, aref, _from):
-
-        scheme, host, module, kclass, oid = self.parse_aref(aref)
+        scheme, host, module, kclass, oid, = self.parse_aref(aref)
 
         if module != 'controller':
             module_ = self.my_import(module)
@@ -184,7 +183,6 @@ class Host(object):
             proxy = Proxy(client, _from, None)
 
         return proxy
-
     def _shutdown(self):
         for atom in self.objects.values():
             if atom.aref != self.aref:
@@ -208,22 +206,21 @@ class Host(object):
         return (aurl.scheme, aurl.netloc, module, kclass, oid)
 
 
-    def _lookup(self, actor_id, _from):
-        if not self.objects.has_key(actor_id):
-            raise ActorNotFound(actor_id)
-
-        obj = self.objects[actor_id]
-        aref = obj.get_aref()
+    def _lookup(self, aref, _from):
         aurl = urlparse(aref)
-
         if self.dispatcher.is_local(aurl.netloc):
-            client = self.load_client(obj.channel, aref, _from)
-            return client
+            _, _, _, _, oid = self.parse_aref(aref)
+            if not self.objects.has_key(oid):
+                raise ActorNotFound(aref)
+            else:
+                obj = self.objects[oid]
+                client = self.load_client(obj.channel, aref, controller.get_current())
+                return client
         elif not self.dispatcher.aref == self.aref:
-            client = self.load_client(self.dispatcher.channel, aref, _from)
+            client = self.load_client(self.dispatcher.channel, aref, controller.get_current())
             return client
         else:
-            raise ActorNotFound(actor_id)
+            raise ActorNotFound(aref)
 
     def lookup(self, actor_id):
         if not self.objects.has_key(actor_id):
@@ -245,10 +242,11 @@ class Host(object):
     def lookup_remote_host(self, aref):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
-            if not self.objects.has_key(aurl.path):
+            _, _, _, _, oid = self.parse_aref(aref)
+            if not self.objects.has_key(oid):
                 raise ActorNotFound(aref)
             else:
-                obj = self.objects[aurl.path]
+                obj = self.objects[oid]
                 client = self.load_client(obj.channel, aref, controller.get_current())
                 return client
         elif not self.dispatcher.aref == self.aref:
@@ -270,14 +268,12 @@ class Host(object):
         #loads not allow ref in dict values for instance, only list
         if isinstance(param, AtomRef):
             _from = controller.get_current()
-
             if _from == param.get_aref():
                 _, _, _, _, oid = self.parse_aref(_from)
                 obj = Auto_Proxy(self.objects[oid].obj, _from)
             else:
                 _, _, _, _, oid = self.parse_aref(param.get_aref())
-                print 'oid', oid
-                obj = self._lookup(oid, _from)
+                obj = self._lookup(param.get_aref(), _from)
 
             return obj
 
@@ -307,7 +303,8 @@ def init_host(transport=()):
     h.atom = a
     global host
     host = h
-    return a.get_proxy()
+    r = a.get_proxy()
+    return r
 
 def new_group(aref):
     a = controller.MultiActor()
