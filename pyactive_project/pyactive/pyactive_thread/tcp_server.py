@@ -1,11 +1,14 @@
 """
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
-import socket
 from socket import AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+import socket
 from threading import Thread
-from pyactive.constants import TARGET,SRC
-import types, struct, cPickle, sys
+import struct
+import cPickle
+
+from pyactive.constants import TARGET, SRC
+
 
 class Server:
     def __init__(self, host, port, listener):
@@ -13,24 +16,22 @@ class Server:
         listenSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         listenSocket.bind((host, port))
         listenSocket.listen(10)
-        #print "SERVER: Listening"
-        self.sockets = {}
-        self.endpoints={}
+        # print "SERVER: Listening"
+        self.sockets = dict()
+        self.endpoints = dict()
         self.socket = listenSocket
         self.listener = listener
         self.thread = Thread(target=self.AcceptConnections, args=[listenSocket])
         self.thread.start()
 
-
     def AcceptConnections(self, listenSocket):
         while True:
             self.AcceptEndpointConnections(listenSocket)
 
-
     def AcceptEndpointConnections(self, listenSocket):
         clientSocket, clientAddress = listenSocket.accept()
-        #print "SERVER: Accepted connection from", clientAddress
-        #print "SERVER: Client socket", id(clientSocket._sock)
+        # print "SERVER: Accepted connection from", clientAddress
+        # print "SERVER: Client socket", id(clientSocket._sock)
         EndPoint(self, clientSocket)
 
     def send(self, msg):
@@ -38,7 +39,7 @@ class Server:
         data = cPickle.dumps(msg)
         conn = None
 
-        if self.endpoints.has_key(addr):
+        if addr in self.endpoints:
             end_point = self.endpoints[addr]
             conn = end_point.socket
         else:
@@ -52,7 +53,7 @@ class Server:
         conn.send(data)
 
     def close(self):
-        #print "SERVER: Shutting down the server"
+        # print "SERVER: Shutting down the server"
         try:
             self.socket.shutdown(1)
         except:
@@ -61,7 +62,6 @@ class Server:
         for endpoint in self.endpoints.values():
             endpoint.Release()
         self.thread._Thread__stop()
-
 
 
 class EndPoint:
@@ -84,7 +84,7 @@ class EndPoint:
     def _ManageSocket(self):
         try:
             self._ReceivePackets()
-        except socket.error, e:
+        except socket.error:
             self.Release()
 
     def _ReceivePackets(self):
@@ -112,8 +112,8 @@ class EndPoint:
     def _DispatchIncomingPacket(self, rawPacket):
         msg = cPickle.loads(rawPacket)
         if not self.init:
-            self.server.endpoints[msg[SRC]]=self
-            self.init= True
+            self.server.endpoints[msg[SRC]] = self
+            self.init = True
         self.server.listener.on_message(msg)
 
     def _SendPacket(self, packetType, callID, payload):
@@ -121,7 +121,7 @@ class EndPoint:
         self.socket.send(struct.pack("!I", len(data)))
         self.socket.send(data)
 
-    def send(self,data):
+    def send(self, data):
         self.socket.send(struct.pack("!I", len(data)))
         # Packet data.
         self.socket.send(data)

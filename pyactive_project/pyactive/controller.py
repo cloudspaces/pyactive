@@ -1,16 +1,18 @@
 """
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
-
 from urlparse import urlparse
-from proxy import Proxy, select_time, Auto_Proxy
 from util import Ref, AtomRef
 from copy import copy
-from exception import NotFoundDispatcher, DuplicatedActor, SyncMethodError, ActorNotFound
-import sys, types
+import sys
+
+from pyactive.exception import NotFoundDispatcher, DuplicatedActor, SyncMethodError, ActorNotFound
+from proxy import Proxy, select_time, Auto_Proxy
+
 
 def get_host():
     return host
+
 
 def start_controller(controllerType):
     global packageName
@@ -20,74 +22,78 @@ def start_controller(controllerType):
     global timeController
     timeController = __import__(packageName+'.'+packageName+'Delay', globals(), locals(), ['later', 'sleep', 'interval', 'interval_host'], -1)
 
-def tracer(func,atom):
+
+def tracer(func, atom):
     """Tracer the call messages"""
     def on_call(*args):
         atom.notify(args[0])
         return func(*args)
     return on_call
 
-def tracer2(func,atom):
+
+def tracer2(func, atom):
     """Tracer the response messages"""
     def on_call(*args):
         atom.notify(args[1])
         return func(*args)
     return on_call
 
+
 class Host(object):
-    _sync = {'spawn_id':'1', 'set_tracer':'1', 'lookup':'1', 'lookup_remote_host':'1'}
-    _async = ['shutdown', 'hello', 'attach_interval', 'detach_interval']
-    _ref = ['spawn_id', 'lookup', 'lookup_remote_host' ]
+    _sync = {'spawn_id': '1', 'set_tracer': '1', 'lookup': '1', 'lookup_remote_host': '1'}
+    _async = ['shutdown', 'hello', 'attach_interval', 'detach_interval', 'unregister']
+    _ref = ['spawn_id', 'lookup', 'lookup_remote_host']
     _parallel = []
 
     def __init__(self, transport=()):
         self.name = 'local'
-        self.objects = {}
-        self.locks = {}
+        self.objects = dict()
+        self.stopped_objects = dict()
+        self.locks = dict()
         self.dispatcher = self
-        self.tasks = {}
+        self.tasks = dict()
         self.TRACE = False
         self.load_transport(transport)
-        self.interval = {}
+        self.interval = dict()
         self.host = self
 
     def load_transport(self, transport):
         if transport != ():
-                try:
-                    self.protocol, self.dispatcher = controller.new_dispatcher(self, transport)
-                except NotFoundDispatcher:
-                    raise NotFoundDispatcher()
+            try:
+                self.protocol, self.dispatcher = controller.new_dispatcher(self, transport)
+            except NotFoundDispatcher:
+                raise NotFoundDispatcher()
         else:
             self.protocol = 'atom'
         self.aref = 'atom://' + self.dispatcher.name + '/controller/Host/0'
         self.name = self.dispatcher.name
 
-
     def spawn_id(self, oid, module, kclass, params=[]):
         module_ = self.my_import(module)
 
-        #instance object save to obj variable
+        # instance object save to obj variable
         obj = getattr(module_, kclass)(*params)
         obj.keep_alive = keep_alive
-#         setattr(kclass, 'keep_alive', types.MethodType(keep_alive(), kclass))
-#         add_method = types.MethodType(keep_alive, obj, kclass)
-#         obj = add_method
-        #aref object
+        # setattr(kclass, 'keep_alive', types.MethodType(keep_alive(), kclass))
+        # add_method = types.MethodType(keep_alive, obj, kclass)
+        # obj = add_method
+        # aref object
         aref = 'atom://' + self.name + '/' + module + '/' + kclass + '/' + oid
-        #Now we need registry object to Pyactive object. But also it's necessary create new Pyactive instance.
+        # Now we need registry object to Pyactive object. But also it's
+        # necessary create new Pyactive instance.
         a = controller.Actor()
 
-        #Registry object to Pyactive
+        # Registry object to Pyactive
         a.registry_object(obj)
 
-        #Insert aref to Pyactive object
+        # Insert aref to Pyactive object
         a.set_aref(aref)
         a.host = self
         obj.id = oid
         obj.host = self.atom.get_proxy()
         obj._atom = a
         refList = obj.__class__._ref
-#        refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
+        # refList = list(methodsWithDecorator(getattr(module_, kclass), 'ref'))
 
         if self.TRACE:
             a.send2 = tracer2(a.send2, self.tracer)
@@ -103,18 +109,17 @@ class Host(object):
             raise SyncMethodError(module+"."+kclass)
         syncList = obj.__class__._sync.keys()
         asyncList = obj.__class__._async
-        a.sync_parallel = set(syncList)&set(parallelList)
-        a.async_parallel = set(asyncList)&set(parallelList)
-#        a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
+        a.sync_parallel = set(syncList) & set(parallelList)
+        a.async_parallel = set(asyncList) & set(parallelList)
+        # a.parallelList = list(methodsWithDecorator(getattr(module_, kclass), 'parallel'))
         if parallelList:
             lock = a.init_parallel()
             self.locks[aref] = lock
 
-        #Finally run object because it's ready now
+        # Finally run object because it's ready now
         a.run()
 
-        #Now registry new object in Host, because need check duplicates
-
+        # Now registry new object in Host, because need check duplicates
         try:
             aurl = urlparse(aref)
             if self.is_local(aurl.netloc):
@@ -125,9 +130,9 @@ class Host(object):
             a.stop()
             raise e
 
-
         obj.proxy = Auto_Proxy(obj, aref)
         client = self.load_client(a.channel, aref, aref)
+
         return client
 
     def attach_interval(self, interval_id, interval_event):
@@ -137,16 +142,20 @@ class Host(object):
         del self.interval[interval_id]
 
     def register(self, oid, obj):
-        if self.objects.has_key(oid):
+        if oid in self.objects:
             raise DuplicatedActor()
         else:
             self.objects[oid] = obj
+
+    def unregister(self, oid):
+        if oid in self.objects:
+            self.stopped_objects[oid] = self.objects[oid]
+            del self.objects[oid]
 
     def set_tracer(self, proxy):
         self.TRACE = True
         self.tracer = proxy
         return True
-
 
     def hello(self):
         print 'I am Host'
@@ -170,9 +179,9 @@ class Host(object):
         client.refList = copy(kclass_._ref)
         client.syncList = copy(kclass_._sync)
 
-#        client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
-#        client.refList = list(methodsWithDecorator(kclass_, 'ref'))
-#        client.syncList = methodsWithSync(kclass_, 'sync')
+        # client.asyncList = list(methodsWithDecorator(kclass_, 'async'))
+        # client.refList = list(methodsWithDecorator(kclass_, 'ref'))
+        # client.syncList = methodsWithSync(kclass_, 'sync')
 
         client.host = self
         select_time(packageName)
@@ -183,12 +192,13 @@ class Host(object):
             proxy = Proxy(client, _from, None)
 
         return proxy
+
     def _shutdown(self):
         for atom in self.objects.values():
             if atom.aref != self.aref:
                 atom.stop()
-        self.objects = {}
-        aurl = urlparse(self.aref)
+        self.objects = dict()
+        # aurl = urlparse(self.aref)
         # self.objects[aurl.path] = self.atom
         if self.dispatcher != self:
             self.dispatcher._stop()
@@ -199,23 +209,26 @@ class Host(object):
     def shutdown(self):
         self._shutdown()
 
-
     def parse_aref(self, aref):
         aurl = urlparse(aref)
         module, kclass, oid = aurl.path[1:].split('/')
         return (aurl.scheme, aurl.netloc, module, kclass, oid)
 
-
     def _lookup(self, aref, _from):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
             _, _, _, _, oid = self.parse_aref(aref)
-            if not self.objects.has_key(oid):
+
+            if oid not in self.objects and oid not in self.stopped_objects:
                 raise ActorNotFound(aref)
             else:
-                obj = self.objects[oid]
+                if oid in self.objects:
+                    obj = self.objects[oid]
+                else:
+                    obj = self.stopped_objects[oid]
                 client = self.load_client(obj.channel, aref, controller.get_current())
                 return client
+
         elif not self.dispatcher.aref == self.aref:
             client = self.load_client(self.dispatcher.channel, aref, controller.get_current())
             return client
@@ -223,10 +236,13 @@ class Host(object):
             raise ActorNotFound(aref)
 
     def lookup(self, actor_id):
-        if not self.objects.has_key(actor_id):
+        if actor_id not in self.objects:
             raise ActorNotFound(actor_id)
 
-        obj = self.objects[actor_id]
+        if actor_id in self.objects:
+            obj = self.objects[actor_id]
+        else:
+            obj = self.stopped_objects[actor_id]
         aref = obj.get_aref()
         aurl = urlparse(aref)
 
@@ -243,10 +259,13 @@ class Host(object):
         aurl = urlparse(aref)
         if self.dispatcher.is_local(aurl.netloc):
             _, _, _, _, oid = self.parse_aref(aref)
-            if not self.objects.has_key(oid):
+            if oid not in self.objects and oid not in self.stopped_objects:
                 raise ActorNotFound(aref)
             else:
-                obj = self.objects[oid]
+                if oid in self.objects:
+                    obj = self.objects[oid]
+                else:
+                    obj = self.stopped_objects[oid]
                 client = self.load_client(obj.channel, aref, controller.get_current())
                 return client
         elif not self.dispatcher.aref == self.aref:
@@ -263,9 +282,8 @@ class Host(object):
         else:
             return param
 
-
     def _loads(self, param):
-        #loads not allow ref in dict values for instance, only list
+        # loads not allow ref in dict values for instance, only list
         if isinstance(param, AtomRef):
             _from = controller.get_current()
             if _from == param.get_aref():
@@ -290,21 +308,24 @@ class Host(object):
 def keep_alive():
     return True
 
+
 def init_host(transport=()):
-    a = controller.Actor()
-    h = Host(transport)
-    a.set_aref(h.aref)
-    a.host = h
-    a.registry_object(h)
-    h.register("0", a)
-    a.ref_on()
-    a.run()
-    h.channel = a.channel
-    h.atom = a
     global host
-    host = h
-    r = a.get_proxy()
-    return r
+
+    actor = controller.Actor()
+    host = Host(transport)
+    actor.set_aref(host.aref)
+    actor.host = host
+    actor.registry_object(host)
+    host.register('0', actor)
+    host.id = '0'
+    actor.ref_on()
+    actor.run()
+    host.channel = actor.channel
+    host.atom = actor
+
+    return actor.get_proxy()
+
 
 def new_group(aref):
     a = controller.MultiActor()
@@ -313,6 +334,7 @@ def new_group(aref):
     host.register(a.aref, a)
     return a
 
+
 def new_supervisor(aref):
     a = controller.Actor()
     a.host = host
@@ -320,22 +342,34 @@ def new_supervisor(aref):
     host.register(a.aref, a)
     return a
 
+
 def launch(func, params=[]):
     controller.launch(func, params)
+
 
 def serve_forever(func, params=[]):
     controller.serve_forever(func, params)
 
+
 def sleep(seconds):
     timeController.sleep(seconds)
 
+
 def interval(time, f, *args, **kwargs):
     return timeController.interval(time, f, *args, **kwargs)
+
+
 def interval_host(host, time, f, *args, **kwargs):
     return timeController.interval_host(host, time, f, *args, **kwargs)
+
+
 def later(time, f, *args, **kwargs):
     timeController.later(time, f, *args, **kwargs)
+
+
 def send_timeout():
     controller.send_timeout()
+
+
 def send_timeout_multi(channel, rpc_list):
     controller.send_timeout_multi(channel, rpc_list)

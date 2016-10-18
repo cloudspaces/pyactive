@@ -1,12 +1,11 @@
-from setuptools import setup
-
+from setuptools import setup, find_packages
 
 setup(
     name='PyActive',
     version='1.1',
     author='Pedro Garcia Lopez & Edgar Zamora Gomez & Ruben Mondejar Andreu',
     author_email='pedro.garcia@urv.cat, edgar.zamora@urv.cat',
-    packages=['pyactive', 'pyactive.abstract_actor', 'pyactive.exception', 'pyactive.Multi', 'pyactive.pyactive_thread','pyactive.pyactive_thread.stomp','pyactive.pyactive_thread.stomp.bridge','pyactive.pyactive_thread.stomp.test', 'pyactive.supervisor', 'pyactive.tasklet'],
+    packages=find_packages(),
     url='http://ast-deim.urv.cat/pyactive',
     license='LICENSE.txt',
     description='Active Object Middleware',

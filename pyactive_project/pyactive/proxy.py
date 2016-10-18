@@ -1,19 +1,25 @@
 """
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
-from constants import METHOD, SYNC, ONEWAY, PARAMS, MODE, FROM, RPC_ID, MULTI
-import controller
-from util import Ref
 from copy import copy
-from exception import TimeoutError, PyactiveError
+from util import Ref
 import uuid
+
+from constants import METHOD, SYNC, ONEWAY, PARAMS, MODE, FROM, RPC_ID
+import controller
 
 
 def select_time(packageName):
     global timeout
-    timeout = __import__(packageName + '.' + packageName, globals(), locals(), ['send_timeout'], -1)
+    timeout = __import__(packageName + '.' + packageName,
+                         globals(),
+                         locals(),
+                         ['send_timeout'], -1)
     global time
-    time = __import__(packageName + '.' + packageName + 'Delay', globals(), locals(), ['later'], -1)
+    time = __import__(packageName + '.' + packageName + 'Delay',
+                      globals(),
+                      locals(),
+                      ['later'], -1)
 
 
 class Auto_Proxy(Ref):
@@ -27,8 +33,8 @@ class Auto_Proxy(Ref):
     def hello(self):
         print self
 
-    def __getattr__(self, name):
-        return _RemoteMethod2(getattr(self.obj, name), name)
+    def __getattr__(self, method_name):
+        return _RemoteMethod2(getattr(self.obj, method_name), method_name)
 
     def get_aref(self):
         return self.aref
@@ -45,22 +51,20 @@ class Proxy(Ref):
         self.syncList = copy(self.client.syncList)
         refAsync = set(client.asyncList) & set(client.refList)
         self.refSync = set(client.syncList) & set(client.refList)
-        for name in self.refSync:
-            setattr(self, name, _RefWraper(self.sync_remote_call, name))
-            del self.client.syncList[name]
-        for name in refAsync:
-            setattr(self, name, _RefWraper(self.async_remote_call, name))
-            self.client.asyncList.remove(name)
-        for name in self.client.asyncList:
-            setattr(self, name, _RemoteMethod(self.async_remote_call, name))
-        for name in self.client.syncList.keys():
-            setattr(self, name, _RemoteMethod(self.sync_remote_call, name))
+        for method_name in self.refSync:
+            setattr(self, method_name, _RefWraper(self.sync_remote_call, method_name))
+            del self.client.syncList[method_name]
+        for method_name in refAsync:
+            setattr(self, method_name, _RefWraper(self.async_remote_call, method_name))
+            self.client.asyncList.remove(method_name)
+        for method_name in self.client.syncList.keys():
+            setattr(self, method_name, _RemoteMethod(self.sync_remote_call, method_name))
+        for method_name in self.client.asyncList:
+            setattr(self, method_name, _RemoteMethod(self.async_remote_call, method_name))
 
-    def sync_remote_call(self, methodname, vargs, kwargs):
-#         print 'SOC AL PROXY', self._from, self.client._id
-#         print 'SOC DINS EL SYNC CALL semafor meu', self.lock
+    def sync_remote_call(self, method_name, vargs, kwargs):
         msg = {}
-        msg[METHOD] = methodname
+        msg[METHOD] = method_name
         msg[PARAMS] = vargs
         msg[MODE] = SYNC
         msg[FROM] = self._from
@@ -71,13 +75,14 @@ class Proxy(Ref):
         if self.lock:
             # print 'release_proxy', self._from, self.lock
             self.lock.release()
-           # time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
-        t_timer = self.my_later(methodname, rpc_id)
+            # time.later(int(self.syncList.get(method_name)), timeout.send_timeout, self.client.channel, rpc_id)
+
+        t_timer = self.my_later(method_name, rpc_id)
         result = self.client.receive_result()
-        # print 'proxy_result', result
         t_timer.cancel()
+
         if self.lock:
-#             print 'acquire_proxy', self._from
+            # print 'acquire_proxy', self._from
             self.lock.acquire()
         if isinstance(result, Exception):
             # print 'result exception', result
@@ -85,16 +90,19 @@ class Proxy(Ref):
         else:
             return result
 
-    def async_remote_call(self, methodname, vargs, kwargs):
+    def async_remote_call(self, method_name, vargs, kwargs):
         msg = {}
-        msg[METHOD] = methodname
+        msg[METHOD] = method_name
         msg[PARAMS] = vargs
         msg[MODE] = ONEWAY
         msg[FROM] = self._from
         self.client.send(msg)
 
-    def my_later(self, methodname, rpc_id):
-        return time.later(int(self.syncList.get(methodname)), timeout.send_timeout, self.client.channel, rpc_id)
+    def my_later(self, method_name, rpc_id):
+        return time.later(int(self.syncList.get(method_name)),
+                          timeout.send_timeout,
+                          self.client.channel,
+                          rpc_id)
 
     def get_aref(self):
         return self.client.get_aref()
@@ -110,9 +118,9 @@ class Proxy(Ref):
 
 
 class _RemoteMethod2():
-    def __init__(self, send, name):
+    def __init__(self, send, method_name):
         self.__send = send
-        self.__name = name
+        self.__name = method_name
 
     def __call__(self, *args, **kwargs):
         return self.__send(*args, **kwargs)
@@ -120,24 +128,23 @@ class _RemoteMethod2():
 
 class _RemoteMethod():
     """method call abstraction"""
-
-    def __init__(self, send, name):
+    def __init__(self, send, method_name):
         self.__send = send
-        self.__name = name
+        self.__name = method_name
 
     def __call__(self, *args, **kwargs):
         return self.__send(self.__name, args, kwargs)
 
 
 class _RefWraper():
-    def __init__(self, send, name):
+    def __init__(self, send, method_name):
         self.__send = send
-        self.__name = name
+        self.__name = method_name
 
     def __call__(self, *args, **kwargs):
         new_args = controller.get_host()._dumps(list(args))
         result = self.__send(self.__name, new_args, kwargs)
-        if result != None:
+        if result is not None:
             return controller.get_host()._loads(result)
         else:
             return result

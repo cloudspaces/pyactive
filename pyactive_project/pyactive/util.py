@@ -1,12 +1,14 @@
 """
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
-import controller
+
 from constants import PARAMS, RESULT
-import inspect
+import controller
+
 
 class Ref(object):
     pass
+
 
 def ref_l(f):
     def wrap_ref_l(*args):
@@ -14,11 +16,13 @@ def ref_l(f):
         return f(*args)
     return wrap_ref_l
 
+
 def ref_d(f):
     def wrap_ref_d(*args):
         args[1][RESULT] = controller.get_host()._dumps(args[1][RESULT])
         return f(*args)
     return wrap_ref_d
+
 
 class AtomRef(Ref):
     def __init__(self, aref, gref=None):

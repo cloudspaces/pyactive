@@ -4,10 +4,12 @@ Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 from threading import Thread, Timer, Event, currentThread
 import time as timep
 
-def later(timeout,f,*args, **kwargs):
+
+def later(timeout, f, *args, **kwargs):
     t = Timer(timeout, f, args)
     t.start()
     return t
+
 
 def interval(time, f, *args, **kwargs):
     def wrap(*args, **kwargs):
@@ -25,6 +27,7 @@ def interval(time, f, *args, **kwargs):
     t = Thread(target=wrap, args=args, kwargs=kwargs)
     t.start()
     return t2_stop
+
 
 def interval_host(host, time, f, *args, **kwargs):
     def wrap(*args, **kwargs):
@@ -47,6 +50,7 @@ def interval_host(host, time, f, *args, **kwargs):
     thread_id = t.getName()
     host.attach_interval(thread_id, t2_stop)
     return t2_stop
+
 
 def sleep(time):
     timep.sleep(time)

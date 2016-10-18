@@ -1,19 +1,21 @@
 '''Failure Detect using Supervisor!'''
-from pyactive.controller import interval, new_supervisor
 from pyactive.Multi import SMulti
+from pyactive.controller import interval, new_supervisor
+
 
 class Supervisor():
-    def __init__(self, time, retries, owner, actors = []):
+    def __init__(self, time, retries, owner, actors=[]):
         self.owner = owner
         self.s_actor = new_supervisor(self.owner.aref)
         self.actors = {}
         self.retries = {}
         self.max_retries = retries
 
-        self.multiActors = SMulti( self.s_actor, actors)
+        self.multiActors = SMulti(self.s_actor, actors)
         self.add_actors(actors)
         interval(time, self.ask_actors)
-        #timer to indicate the frequency to ask to actors
+        # timer to indicate the frequency to ask to actors
+
     def add_actor(self, actor):
         self.actors[actor.get_aref()] = actor
         self.retries[actor.get_aref()] = 0
@@ -30,7 +32,7 @@ class Supervisor():
                 self.retries[k] = 0
         except:
             for key in self.actors.keys():
-                self.retries[key] +=1
+                self.retries[key] += 1
                 if self.retries[key] > self.max_retries:
                     self.owner.failure_detect(self.actors[key])
                     self.retries[key] = 0

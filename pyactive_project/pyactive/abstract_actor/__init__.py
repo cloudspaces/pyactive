@@ -1,14 +1,16 @@
-from pyactive.util import Ref, ref_d, ref_l
-from pyactive.constants import METHOD, MODE, SRC, TO, FROM, TARGET, TYPE, RESULT, PARAMS, RPC_ID, SYNC, CALL, ERROR, MULTI, TCP
 from exceptions import NotImplementedError
 from urlparse import urlparse
+
+from pyactive.constants import METHOD, MODE, SRC, TO, FROM, TARGET, TYPE, \
+                        RESULT, PARAMS, RPC_ID, SYNC, CALL, ERROR, MULTI, TCP
+from pyactive.util import Ref, ref_d, ref_l
+
 
 class Abstract_actor(Ref):
     def __init__(self):
         self.aref = ''
         self.group = None
         self.running = False
-
 
     def registry_object(self, obj):
         self.obj = obj
@@ -19,13 +21,13 @@ class Abstract_actor(Ref):
     def stop(self):
         raise NotImplementedError()
 
-    def send(self,msg):
+    def send(self, msg):
         raise NotImplementedError()
 
     def init_parallel(self):
         raise NotImplementedError()
 
-    def send2(self,target,msg):
+    def send2(self, target, msg):
         target.send(msg)
 
     def receive_result(self):
@@ -39,7 +41,7 @@ class Abstract_actor(Ref):
     def failure_detect(self, actor):
         self.obj.failure_detect(actor.get_id())
 
-    def receive(self,msg):
+    def receive(self, msg):
         raise NotImplementedError()
 
     def ref_on(self):
@@ -51,9 +53,9 @@ class Abstract_actor(Ref):
         return self.aref
 
     def get_gref(self):
-        if self.group != None:
+        if self.group is not None:
             return self.group.aref
-    
+
     def set_aref(self, aref):
         self.aref = aref
         aurl = urlparse(aref)

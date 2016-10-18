@@ -1,19 +1,20 @@
 """
 Author: Edgar Zamora Gomez  <edgar.zamora@urv.cat>
 """
-
-from pyactive.constants import METHOD, MODE, SRC, TO, FROM, TARGET, TYPE, RESULT, PARAMS, RPC_ID, SYNC, CALL, ERROR, MULTI, TCP
-from urlparse import urlparse
-import stackless
-import copy
-from pyactive.exception import PyactiveError, TimeoutError, NotFoundDispatcher, MethodError
-from pyactive.util import Ref, ref_l, ref_d
 from collections import deque
+from urlparse import urlparse
 from taskletDelay import sleep
 from tcp_server import Server
+import stackless
+import copy
+
 from pyactive.abstract_actor import Abstract_actor
-pending = {}
-tasklets = {}
+from pyactive.constants import METHOD, MODE, SRC, TO, FROM, TARGET, TYPE, RESULT, PARAMS, RPC_ID, SYNC, CALL, ERROR, MULTI, TCP
+from pyactive.exception import TimeoutError, NotFoundDispatcher
+
+pending = dict()
+tasklets = dict()
+
 
 class Actor(Abstract_actor):
 
@@ -43,6 +44,7 @@ class Actor(Abstract_actor):
             msg = self.channel.receive()
             self.queue.append(msg)
             self.receive_all()
+
     def set_pending(self, rpc_id):
         pending[rpc_id] = 1
 
@@ -100,7 +102,7 @@ class Actor(Abstract_actor):
                 msg2[RESULT] = result
                 del msg2[PARAMS]
                 del msg2[SRC]
-                if pending.has_key(msg[RPC_ID]):
+                if msg[RPC_ID] in pending:
                     del pending[msg[RPC_ID]]
                     _from = msg2[FROM]
                     msg2[FROM] = self.aref
@@ -119,29 +121,31 @@ class Actor(Abstract_actor):
         del self.callbacks[name]
         msg2 = copy.copy(msg)
         target = msg2[SRC]
-        msg2[TYPE]= RESULT
-        msg2[RESULT]=result
+        msg2[TYPE] = RESULT
+        msg2[RESULT] = result
         del msg2[PARAMS]
         del msg2[SRC]
-        if pending.has_key(msg[RPC_ID]):
+        if msg[RPC_ID] in pending:
             del pending[msg[RPC_ID]]
             _from = msg2[FROM]
             msg2[FROM] = self.aref
             msg2[TO] = _from
-            self.send2(target,msg2)
+            self.send2(target, msg2)
 
-
-    #@sync(2)
+    # @sync(2)
     def ping(self):
         return True
 
     def get_proxy(self):
         return self.host.load_client(self.channel, self.aref, get_current())
+
+
 class MultiActor(Actor):
     def receive_result(self):
         '''receive result of synchronous calls'''
         result = self.channel.receive()
         return result[FROM], result[RESULT]
+
 
 class ParallelSyncWraper():
     def __init__(self, send, aref, principal_thread, name):
@@ -149,23 +153,26 @@ class ParallelSyncWraper():
         self.__send = send
         self.__aref = aref
         self.__principal_thread = principal_thread
+
     def __call__(self, *args, **kwargs):
         t = stackless.tasklet(self.__send)(*args)
         tasklets[t] = self.__aref
-
 
     def invoke(self, func, args=[], kwargs=[]):
         result = func(*args, **kwargs)
         self.__principal_thread.receive_sync(result, self.__name)
 
+
 class ParallelAsyncWraper():
+
     def __init__(self, send, aref):
-        self.__send= send
+        self.__send = send
         self.__aref = aref
 
     def __call__(self, *args, **kwargs):
         t = stackless.tasklet(self.__send)(*args)
         tasklets[t] = self.__aref
+
 
 class TCPDispatcher(Actor):
 
@@ -179,11 +186,10 @@ class TCPDispatcher(Actor):
 
         self.callback = {}
 
-    #@async
+    # @async
     def _stop(self):
         self.conn.close()
         super(TCPDispatcher, self)._stop()
-
 
     def receive(self, msg):
         if msg[MODE] == SYNC and msg[TYPE] == CALL:
@@ -198,10 +204,10 @@ class TCPDispatcher(Actor):
     def on_message(self, msg):
         try:
             if msg[TYPE] == RESULT:
-                if msg.has_key(MULTI):
+                if MULTI in msg:
                     target = self.callback[msg[RPC_ID]]
                     target.send(msg)
-                if pending.has_key(msg[RPC_ID]):
+                if msg[RPC_ID] in pending:
                     del pending[msg[RPC_ID]]
                     target = self.callback[msg[RPC_ID]]
                     del self.callback[msg[RPC_ID]]
@@ -214,7 +220,7 @@ class TCPDispatcher(Actor):
                 aref = msg[TO]
                 aurl = urlparse(aref)
                 self.host.objects[aurl.path].channel.send(msg)
-        except Exception, e:
+        except Exception as e:
             print e, 'TCP ERROR2'
 
 
@@ -222,6 +228,7 @@ def new_TCPdispatcher(host, dir):
     tcp = TCPDispatcher(host, dir)
     tcp.run()
     return tcp
+
 
 def new_dispatcher(host, transport):
     '''Select and create new dispatcher '''
@@ -231,23 +238,26 @@ def new_dispatcher(host, transport):
     else:
         raise NotFoundDispatcher()
 
+
 def get_current():
     current = stackless.getcurrent()
-    if tasklets.has_key(current):
+    if current in tasklets:
         return tasklets[current]
 
 
 def send_timeout(channel, rpc_id):
-    if pending.has_key(rpc_id):
+    if rpc_id in pending:
         del pending[rpc_id]
         msg = {}
         msg[TYPE] = ERROR
         msg[RESULT] = TimeoutError()
         channel.send(msg)
+
+
 def send_timeout_multi(channel, rpc_id_list):
-    send_message =  False
+    send_message = False
     for rpc_id in rpc_id_list:
-        if pending.has_key(rpc_id):
+        if rpc_id in pending:
             del pending[rpc_id]
             send_message = True
     if send_message:
@@ -257,6 +267,7 @@ def send_timeout_multi(channel, rpc_id_list):
         msg[RESULT] = 'error'
         channel.send(msg)
 
+
 def launch(func, params=[]):
     t1 = stackless.tasklet(func)(*params)
     tasklets[t1] = 'atom://localhost/' + func.__module__ + '/' + func.__name__
@@ -264,6 +275,7 @@ def launch(func, params=[]):
     while t1.scheduled:
         stackless.schedule()
         sleep(0.01)
+
 
 def serve_forever(func, params=[]):
     t1 = stackless.tasklet(func)(*params)
